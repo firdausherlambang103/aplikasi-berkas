@@ -1,6 +1,5 @@
 @php
     // Ambil template DARI DATABASE satu kali saja
-    // Ini mengasumsikan Anda sudah memasukkan data default ke tabel settings
     $setting = \App\Models\Setting::where('key', 'wa_template')->first();
     $templatePesanWA = $setting ? $setting->value : "Template default (DB Error: Silakan cek halaman Pengaturan Pesan)";
 @endphp
@@ -89,6 +88,9 @@
                             @endif
                             
                             <form action="{{ route('berkas.destroy', $berkas->id) }}" method="POST" style="display:inline-block;">
+                                {{-- Gunakan $berka->id jika Anda mengikuti standar 'berka' --}}
+                                {{-- <a href="{{ route('berkas.edit', $berka->id) }}" class="btn btn-warning btn-sm">Edit</a> --}}
+                                {{-- Gunakan $berkas->id jika Anda menggunakan 'berkas' --}}
                                 <a href="{{ route('berkas.edit', $berkas->id) }}" class="btn btn-warning btn-sm">Edit</a>
                                 @csrf
                                 @method('DELETE')
@@ -124,7 +126,6 @@
 
             <div class="form-group">
                 <label>Isi Pesan (Konfirmasi):</label>
-                {{-- Textarea ini hanya untuk dibaca (readonly) --}}
                 <textarea id="modal-isi-pesan" class="form-control" rows="10" readonly></textarea>
             </div>
 
@@ -154,28 +155,22 @@ $(document).ready(function() {
     });
 
     // --- 2. Event Handler untuk Tombol di Tabel (Membuka Modal) ---
-    // Saat tombol .btn-kirim-wa (di tabel) diklik...
-    $('#berkas-table').on('click', '.btn-kirim-wa', function() {
+    // Gunakan 'body' sebagai delegasi yang lebih aman
+    $('body').on('click', '.btn-kirim-wa', function() {
         
-        // Ambil data dari tombol yang diklik
         const nomor = $(this).data('nomor');
         const pesan = $(this).data('pesan');
 
-        // Isi data tersebut ke dalam field di modal
         $('#modal-nomor-wa').val(nomor);
-        $('#modal-isi-pesan').val(pesan); // Mengisi textarea dengan pesan default
+        $('#modal-isi-pesan').val(pesan); 
 
-        // Tampilkan modal
         $('#kirimWaModal').modal('show');
     });
 
 
     // --- 3. Event Handler untuk Tombol "Kirim Sekarang" di dalam Modal ---
-    // Saat tombol #btn-kirim-final (di modal) diklik...
     $('#btn-kirim-final').on('click', function() {
         const button = $(this);
-        
-        // Ambil data DARI DALAM MODAL
         const nomor = $('#modal-nomor-wa').val();
         const pesan = $('#modal-isi-pesan').val();
 
@@ -184,12 +179,11 @@ $(document).ready(function() {
             return;
         }
 
-        // 1. Ubah teks tombol menjadi loading
         const originalText = button.html();
         button.html('<i class="fas fa-spinner fa-spin"></i> Mengirim...');
         button.prop('disabled', true);
 
-        // 2. Panggil API Server Node.js kita
+        // --- INI ADALAH BAGIAN UTAMA ---
         fetch('http://localhost:3000/kirim-pesan', {
             method: 'POST',
             headers: {
@@ -200,7 +194,14 @@ $(document).ready(function() {
                 pesan: pesan
             })
         })
-        .then(response => response.json())
+        .then(response => {
+             // Cek jika response tidak OK (cth: 500 Internal Server Error)
+            if (!response.ok) {
+                // lempar error agar ditangkap oleh .catch()
+                throw new Error('Server merespon dengan error: ' + response.status);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 alert('Pesan berhasil terkirim!');
@@ -210,11 +211,11 @@ $(document).ready(function() {
             }
         })
         .catch(error => {
-            console.error('Error:', error);
-            alert('Terjadi error saat menghubungi server WA. Pastikan server Node.js berjalan.');
+            // Ini adalah bagian jika server Node.js MATI atau URL salah
+            console.error('Error saat fetch:', error);
+            alert('GAGAL MENGHUBUNGI SERVER WA.\n\nPastikan 1) Server Node.js berjalan, dan 2) Tidak ada error CORS di console (F12).');
         })
         .finally(() => {
-            // Kembalikan tombol ke state semula (apapun hasilnya)
             button.html(originalText);
             button.prop('disabled', false);
         });
