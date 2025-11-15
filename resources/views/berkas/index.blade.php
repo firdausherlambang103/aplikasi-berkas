@@ -42,6 +42,7 @@
                         <td>{{ $berkas->nomer_berkas }}</td>
                         <td>
                             {{ $berkas->nama_pemohon }}
+                            {{-- FAKTA A: Logika ini berjalan, artinya $berkas->nomer_wa ADA --}}
                             @if($berkas->nomer_wa)
                                 <br><small>WA: {{ $berkas->nomer_wa }}</small>
                             @endif
@@ -86,6 +87,8 @@
                                 </div>
                             @else
                                 <small class="text-muted">
+                                    {{-- FAKTA B: Logika ini berjalan, artinya $berkas->nomer_wa KOSONG --}}
+                                    {{-- INI ADALAH BUKTI CACHE KORUP --}}
                                     @if(!$berkas->nomer_wa)
                                     (No WA terdaftar)
                                     @elseif($templates->count() == 0)
@@ -167,7 +170,6 @@ $(document).ready(function() {
         });
     } catch (e) {
         console.error("Gagal memuat DataTables:", e);
-        // Tampilkan peringatan jika gagal, TAPI JANGAN HENTIKAN SCRIPT
         if (typeof toastr !== 'undefined') {
             toastr.warning('Plugin DataTables gagal dimuat. Fitur tabel mungkin non-aktif.', 'Peringatan');
         } else {
