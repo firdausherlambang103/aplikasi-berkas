@@ -2,130 +2,132 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Klien;
 use App\Models\Berkas;
-use App\Models\WaPlaceholder; // Pastikan ini ada
+use App\Models\Klien; // PENTING: Pastikan Klien model di-import
+use Illuminate\Http\Request;
+use App\Models\WaTemplate; // Diambil dari file asli Anda
+use App\Services\WaNotificationService; // Diambil dari file asli Anda
 
 class BerkasController extends Controller
 {
     /**
      * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
      */
     public function index()
     {
-        // Eager load relasi 'klien' dan 'waLogs'
-        $semuaBerkas = Berkas::with('klien', 'waLogs')->latest()->get();
-        
-        // Ambil semua template
-        $templates = \App\Models\WaTemplate::all(); 
- 
-        // Ambil semua placeholder
-        $placeholders = WaPlaceholder::all();
- 
-        return view('berkas.index', compact('semuaBerkas', 'templates', 'placeholders'));
+        $berkas = Berkas::with('klien')->latest()->paginate(10);
+        return view('berkas.index', compact('berkas'));
     }
 
     /**
      * Show the form for creating a new resource.
+     *
+     * @return \Illuminate\Http\Response
      */
     public function create()
     {
-        // Ambil semua klien untuk dropdown
-        $klienTersedia = Klien::all();
+        // FUNGSI INI DITAMBAHKAN
+        // Kita mengambil semua data klien untuk dikirim ke dropdown
+        // 'klienTersedia' harus cocok dengan nama variabel di @foreach pada view
+        $klienTersedia = Klien::orderBy('nama_klien', 'asc')->get();
+
+        // Kirim data klien ke view
         return view('berkas.create', compact('klienTersedia'));
     }
 
     /**
      * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(Request $request, WaNotificationService $waService)
     {
-        $request->validate([
-            'nomer_berkas' => 'nullable|string|max:100|unique:berkas,nomer_berkas',
-            'klien_id' => 'nullable|exists:klien,id',
+        $validated = $request->validate([
+            'nomer_berkas' => 'nullable|string|max:255',
+            'klien_id' => 'nullable|exists:kliens,id',
             'nama_pemohon' => 'required|string|max:255',
-            'nomer_wa' => 'nullable|string|max:25',
-            
-            // --- PERBAIKAN: Menyamakan validasi dengan 'update' ---
-            'jenis_hak' => 'required|in:SHGB,SHM,SHW,SHP,Leter C', 
-
-            'nomer_hak' => 'required|string|max:100',
-            'kecamatan' => 'required|string|max:100',
-            'desa' => 'required|string|max:100',
-            'jenis_permohonan' => 'required|string',
+            'nomer_wa' => 'nullable|string|max:20',
+            'jenis_hak' => 'required|string|max:50',
+            'nomer_hak' => 'required|string|max:255',
+            'kecamatan' => 'required|string|max:255',
+            'desa' => 'required|string|max:255',
+            'jenis_permohonan' => 'required|string|max:255',
             'spa' => 'nullable|string',
             'alih_media' => 'nullable|string',
             'keterangan' => 'nullable|string',
-            'kode_biling' => 'nullable|string|max:100',
+            'kode_biling' => 'nullable|string|max:255',
             'jumlah_bayar' => 'nullable|numeric',
         ]);
- 
-        Berkas::create($request->all());
- 
-        return redirect()->route('berkas.index')
-                        ->with('success', 'Berkas berhasil diregistrasi.');
-    }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
+        $berkas = Berkas::create($validated);
+
+        // Cek jika nomer WA ada dan template 'registrasi' aktif
+        if ($berkas->nomer_wa) {
+            $waService->sendNotificationOnCreate($berkas);
+        }
+
+        return redirect()->route('berkas.index')->with('success', 'Registrasi berkas baru berhasil disimpan.');
     }
 
     /**
      * Show the form for editing the specified resource.
+     *
+     * @param  \App\Models\Berkas  $berkas
+     * @return \Illuminate\Http\Response
      */
-    public function edit(Berkas $berka)
+    public function edit(Berkas $berkas)
     {
-        $klienTersedia = \App\Models\Klien::all(); 
-        
-        // Variabel ini tidak lagi dibutuhkan karena Nomer WA diisi manual
-        // $nomer_wa_saat_ini = $berka->klien ? $berka->klien->nomer_wa : null;
-        
-        return view('berkas.edit', compact('berka', 'klienTersedia'));
+        $klienTersedia = Klien::orderBy('nama_klien', 'asc')->get();
+        $templates = WaTemplate::where('status', 'aktif')->get();
+        return view('berkas.edit', compact('berkas', 'klienTersedia', 'templates'));
     }
 
     /**
      * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Models\Berkas  $berkas
+     * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Berkas $berka)
+    public function update(Request $request, Berkas $berkas)
     {
-        $request->validate([
-            // Pastikan validasi unique mengabaikan data saat ini
-            'nomer_berkas' => 'nullable|string|max:100|unique:berkas,nomer_berkas,' . $berka->id,
-            'klien_id' => 'nullable|exists:klien,id',
+        $validated = $request->validate([
+            'nomer_berkas' => 'nullable|string|max:255',
+            'klien_id' => 'nullable|exists:kliens,id',
             'nama_pemohon' => 'required|string|max:255',
-            'nomer_wa' => 'nullable|string|max:25',
-            'jenis_hak' => 'required|in:SHGB,SHM,SHW,SHP,Leter C',
-            'nomer_hak' => 'required|string|max:100',
-            'kecamatan' => 'required|string|max:100',
-            'desa' => 'required|string|max:100',
-            'jenis_permohonan' => 'required|string',
+            'nomer_wa' => 'nullable|string|max:20',
+            'jenis_hak' => 'required|string|max:50',
+            'nomer_hak' => 'required|string|max:255',
+            'kecamatan' => 'required|string|max:255',
+            'desa' => 'required|string|max:255',
+            'jenis_permohonan' => 'required|string|max:255',
             'spa' => 'nullable|string',
             'alih_media' => 'nullable|string',
             'keterangan' => 'nullable|string',
-            'kode_biling' => 'nullable|string|max:100',
+            'status' => 'required|string|max:50',
+            'posisi' => 'required|string|max:255',
+            'kode_biling' => 'nullable|string|max:255',
             'jumlah_bayar' => 'nullable|numeric',
+            'tanggal_selesai' => 'nullable|date',
         ]);
- 
-        $berka->update($request->all()); 
- 
-        return redirect()->route('berkas.index')
-                         ->with('success', 'Data Berkas Nomer Hak ' . $berka->nomer_hak . ' berhasil diperbarui.');
+
+        $berkas->update($validated);
+
+        return redirect()->route('berkas.index')->with('success', 'Data berkas berhasil diperbarui.');
     }
 
     /**
      * Remove the specified resource from storage.
+     *
+     * @param  \App\Models\Berkas  $berkas
+     * @return \Illuminate\Http\Response
      */
-    public function destroy(Berkas $berka)
+    public function destroy(Berkas $berkas)
     {
-        $nomer_hak = $berka->nomer_hak;
-        $berka->delete(); 
-        
-        return redirect()->route('berkas.index')
-                         ->with('success', 'Data Berkas Nomer Hak ' . $nomer_hak . ' berhasil dihapus.');
+        $berkas->delete();
+        return redirect()->route('berkas.index')->with('success', 'Berkas berhasil dihapus.');
     }
 }

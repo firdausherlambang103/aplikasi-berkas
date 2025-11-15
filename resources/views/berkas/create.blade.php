@@ -31,11 +31,15 @@
 
                     <div class="form-group">
                         <label>Kode Klien (Opsional - Auto-fill WA)</label>
-                        {{-- Nama 'name' ada di select, bukan di input hidden --}}
+                        {{-- Dropdown Klien --}}
                         <select id="kode_klien_select" name="klien_id" class="form-control">
                             <option value="">-- Pilih Kode (untuk auto-fill) --</option>
+                            
+                            {{-- PERBAIKAN 1: Menambahkan 'data-nomer-wa' --}}
                             @foreach($klienTersedia as $klien)
-                                <option value="{{ $klien->id }}" {{ old('klien_id') == $klien->id ? 'selected' : '' }}>
+                                <option value="{{ $klien->id }}" 
+                                        data-nomer-wa="{{ $klien->nomer_wa }}" 
+                                        {{ old('klien_id') == $klien->id ? 'selected' : '' }}>
                                     {{ $klien->kode_klien }} ({{ $klien->nama_klien }})
                                 </option>
                             @endforeach
@@ -51,8 +55,8 @@
 
                     <div class="form-group">
                         <label>Nomer WA Pemohon</label>
-                        {{-- Field ini sekarang bisa diisi manual, atau otomatis dari "Kode Klien" --}}
-                        <input type="text" name="nomer_wa" id="nomer_wa" class="form-control" placeholder="Cth: 628123456789 (Kosongkan jika tidak ada)" value="{{ old('nomer_wa') }}">
+                        {{-- Input ini akan diisi otomatis oleh JS di bawah --}}
+                        <input type="text" name="nomer_wa" id="nomer_wa" class="form-control" placeholder="Cth: 628123456789 (Pilih Klien atau isi manual)" value="{{ old('nomer_wa') }}">
                     </div>
 
                     <hr>
@@ -129,39 +133,30 @@
 @stop
 
 @section('js')
+{{-- PERBAIKAN 2: Mengganti logika JS menjadi lebih stabil (tanpa fetch API) --}}
 <script>
     $(document).ready(function() {
-        // --- LOGIKA BARU UNTUK AUTO-FILL NOMER WA ---
+        // Fungsi ini akan berjalan setiap kali dropdown Klien (#kode_klien_select) berubah
         $('#kode_klien_select').on('change', function() {
-            var klienId = $(this).val(); // Ambil ID Klien dari dropdown
+            
+            // 1. Ambil <option> yang sedang dipilih
+            var selectedOption = $(this).find('option:selected');
+            
+            // 2. Ambil nilai dari atribut 'data-nomer-wa' yang tadi kita tambahkan di HTML
+            //    Gunakan || '' untuk memastikan nilainya string kosong jika atribut tidak ada/kosong
+            var nomerWa = selectedOption.data('nomer-wa') || '';
 
-            if (klienId) {
-                // Jika Klien dipilih, panggil API
-                fetch(`/api/klien/get-by-id/${klienId}`)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Klien tidak ditemukan');
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        if (data.success && data.nomer_wa) {
-                            // Isi Nomer WA secara otomatis
-                            $('#nomer_wa').val(data.nomer_wa);
-                        } else {
-                            // Jika klien ada tapi tidak punya nomer WA, kosongkan
-                            $('#nomer_wa').val('');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching klien data:', error);
-                        $('#nomer_wa').val(''); // Kosongkan jika ada error
-                    });
-            } else {
-                // Jika pilihan dikosongkan (memilih "-- Pilih Kode --")
-                $('#nomer_wa').val(''); // Kosongkan field agar bisa diisi manual
-            }
+            // 3. Masukkan nilai nomerWa ke input Nomer WA (#nomer_wa)
+            $('#nomer_wa').val(nomerWa);
         });
+
+        // (Tambahan Opsional)
+        // Jika halaman dimuat ulang (misal karena error validasi) dan ada Klien yang
+        // sudah terpilih (dari 'old()'), kita picu 'change' agar Nomer WA-nya
+        // langsung terisi saat halaman dimuat.
+        if ($('#kode_klien_select').val() != "") {
+            $('#kode_klien_select').trigger('change');
+        }
     });
 </script>
 @stop
