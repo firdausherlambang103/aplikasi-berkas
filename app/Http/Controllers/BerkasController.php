@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Klien;
 use App\Models\Berkas;
+use App\Models\WaPlaceholder; // Pastikan ini ada
 
 class BerkasController extends Controller
 {
@@ -13,9 +14,16 @@ class BerkasController extends Controller
      */
     public function index()
     {
-        // Mengambil data dengan relasi 'klien'
-        $semuaBerkas = Berkas::with('klien')->latest()->get();
-        return view('berkas.index', compact('semuaBerkas'));
+        // Eager load relasi 'klien' dan 'waLogs'
+        $semuaBerkas = Berkas::with('klien', 'waLogs')->latest()->get();
+        
+        // Ambil semua template
+        $templates = \App\Models\WaTemplate::all(); 
+ 
+        // Ambil semua placeholder
+        $placeholders = WaPlaceholder::all();
+ 
+        return view('berkas.index', compact('semuaBerkas', 'templates', 'placeholders'));
     }
 
     /**
@@ -34,19 +42,27 @@ class BerkasController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-        'jenis_hak' => 'required',
-        'nomer_hak' => 'required|string|max:100',
-        'kecamatan' => 'required|string|max:100',
-        'desa' => 'required|string|max:100',
-        'jenis_permohonan' => 'required|string',
-        'klien_id' => 'nullable|exists:klien,id', // Validasi klien_id
-        'spa' => 'nullable|string',
-        'alih_media' => 'nullable|string',
-        'keterangan' => 'nullable|string',
+            'nomer_berkas' => 'nullable|string|max:100|unique:berkas,nomer_berkas',
+            'klien_id' => 'nullable|exists:klien,id',
+            'nama_pemohon' => 'required|string|max:255',
+            'nomer_wa' => 'nullable|string|max:25',
+            
+            // --- PERBAIKAN: Menyamakan validasi dengan 'update' ---
+            'jenis_hak' => 'required|in:SHGB,SHM,SHW,SHP,Leter C', 
+
+            'nomer_hak' => 'required|string|max:100',
+            'kecamatan' => 'required|string|max:100',
+            'desa' => 'required|string|max:100',
+            'jenis_permohonan' => 'required|string',
+            'spa' => 'nullable|string',
+            'alih_media' => 'nullable|string',
+            'keterangan' => 'nullable|string',
+            'kode_biling' => 'nullable|string|max:100',
+            'jumlah_bayar' => 'nullable|numeric',
         ]);
-
+ 
         Berkas::create($request->all());
-
+ 
         return redirect()->route('berkas.index')
                         ->with('success', 'Berkas berhasil diregistrasi.');
     }
@@ -56,7 +72,7 @@ class BerkasController extends Controller
      */
     public function show(string $id)
     {
-        // (Biasanya tidak digunakan di CRUD resource standar, bisa dibiarkan kosong)
+        //
     }
 
     /**
@@ -64,12 +80,12 @@ class BerkasController extends Controller
      */
     public function edit(Berkas $berka)
     {
-        // Menggunakan \App\Models\Klien::all() untuk jaga-jaga jika 'use' terlewat
         $klienTersedia = \App\Models\Klien::all(); 
-        $nomer_wa_saat_ini = $berka->klien ? $berka->klien->nomer_wa : null;
         
-        // Pastikan mengirim variabel $berka (bukan $berkas)
-        return view('berkas.edit', compact('berka', 'klienTersedia', 'nomer_wa_saat_ini'));
+        // Variabel ini tidak lagi dibutuhkan karena Nomer WA diisi manual
+        // $nomer_wa_saat_ini = $berka->klien ? $berka->klien->nomer_wa : null;
+        
+        return view('berkas.edit', compact('berka', 'klienTersedia'));
     }
 
     /**
@@ -78,22 +94,26 @@ class BerkasController extends Controller
     public function update(Request $request, Berkas $berka)
     {
         $request->validate([
-            'jenis_hak' => 'required|in:SHGB,SHM,SHW,SHP,Leter C', // Validasi enum
+            // Pastikan validasi unique mengabaikan data saat ini
+            'nomer_berkas' => 'nullable|string|max:100|unique:berkas,nomer_berkas,' . $berka->id,
+            'klien_id' => 'nullable|exists:klien,id',
+            'nama_pemohon' => 'required|string|max:255',
+            'nomer_wa' => 'nullable|string|max:25',
+            'jenis_hak' => 'required|in:SHGB,SHM,SHW,SHP,Leter C',
             'nomer_hak' => 'required|string|max:100',
             'kecamatan' => 'required|string|max:100',
             'desa' => 'required|string|max:100',
             'jenis_permohonan' => 'required|string',
-            'klien_id' => 'nullable|exists:klien,id', // Validasi klien_id opsional
             'spa' => 'nullable|string',
             'alih_media' => 'nullable|string',
             'keterangan' => 'nullable|string',
+            'kode_biling' => 'nullable|string|max:100',
+            'jumlah_bayar' => 'nullable|numeric',
         ]);
-
-        // PERBAIKAN: Gunakan $berka, bukan $berkas
+ 
         $berka->update($request->all()); 
-
+ 
         return redirect()->route('berkas.index')
-                         // PERBAIKAN: Gunakan $berka, bukan $berkas
                          ->with('success', 'Data Berkas Nomer Hak ' . $berka->nomer_hak . ' berhasil diperbarui.');
     }
 
@@ -102,14 +122,10 @@ class BerkasController extends Controller
      */
     public function destroy(Berkas $berka)
     {
-        // PERBAIKAN: Gunakan $berka, bukan $berkas
         $nomer_hak = $berka->nomer_hak;
-        
-        // PERBAIKAN: Tambahkan titik koma (;)
         $berka->delete(); 
         
         return redirect()->route('berkas.index')
                          ->with('success', 'Data Berkas Nomer Hak ' . $nomer_hak . ' berhasil dihapus.');
     }
 }
-// PERBAIKAN: Kurung kurawal '}' yang berlebihan sudah dihapus dari sini.

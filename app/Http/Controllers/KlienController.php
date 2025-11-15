@@ -91,18 +91,19 @@ class KlienController extends Controller
                          ->with('success', 'Klien ' . $klien->nama_klien . ' berhasil dihapus.');
     }
 
-    public function getByKode($kode_klien)
+    public function getById($id)
     {
-        $klien = \App\Models\Klien::where('kode_klien', $kode_klien)->first();
+        $klien = \App\Models\Klien::find($id);
 
         if ($klien) {
             return response()->json([
                 'success' => true,
                 'nomer_wa' => $klien->nomer_wa,
-                'klien_id' => $klien->id
+                'nama_klien' => $klien->nama_klien 
+                // Kita juga bisa kirim nama, untuk jaga-jaga
             ]);
         }
 
-        return response()->json(['success' => false, 'message' => 'Kode tidak ditemukan'], 404);
+        return response()->json(['success' => false, 'message' => 'Klien tidak ditemukan'], 404);
     }
 }

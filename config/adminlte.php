@@ -340,9 +340,14 @@ return [
             'icon' => 'fas fa-fw fa-file-alt',
         ],
         [
-            'text' => 'Pengaturan Pesan',
-            'url'  => 'pengaturan-pesan',
-            'icon' => 'fas fa-fw fa-cogs',
+            'text' => 'Template WA',
+            'url'  => 'wa-templates',
+            'icon' => 'fab fa-fw fa-whatsapp-square',
+        ],
+        [
+        'text' => 'Placeholder WA',
+        'url'  => 'wa-placeholders',
+        'icon' => 'fas fa-fw fa-puzzle-piece',
         ],
         [
             'text' => 'Manajemen Klien', 
