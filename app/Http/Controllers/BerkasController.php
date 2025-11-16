@@ -2,11 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Berkas;
-use App\Models\Klien; // PENTING: Pastikan Klien model di-import
-use Illuminate\Http\Request;
-use App\Models\WaTemplate; // Diambil dari file asli Anda
-use App\Services\WaNotificationService; // Diambil dari file asli Anda
+// ... (use statements lainnya) ...
 
 class BerkasController extends Controller
 {
@@ -17,8 +13,14 @@ class BerkasController extends Controller
      */
     public function index()
     {
-        $berkas = Berkas::with('klien')->latest()->paginate(10);
-        return view('berkas.index', compact('berkas'));
+        $semuaBerkas = Berkas::with('klien', 'kecamatan', 'desa', 'jenisPermohonan')
+                            ->latest()
+                            ->paginate(10);
+        
+        $templates = WaTemplate::where('status_template', 'aktif')->get(); // <-- PERBAIKAN: Harus 'status_template'
+        $placeholders = WaPlaceholder::all();
+
+        return view('berkas.index', compact('semuaBerkas', 'templates', 'placeholders'));
     }
 
     /**
@@ -28,13 +30,11 @@ class BerkasController extends Controller
      */
     public function create()
     {
-        // FUNGSI INI DITAMBAHKAN
-        // Kita mengambil semua data klien untuk dikirim ke dropdown
-        // 'klienTersedia' harus cocok dengan nama variabel di @foreach pada view
         $klienTersedia = Klien::orderBy('nama_klien', 'asc')->get();
+        $kecamatans = Kecamatan::orderBy('nama', 'asc')->get();
+        $jenisPermohonans = JenisPermohonan::orderBy('nama', 'asc')->get();
 
-        // Kirim data klien ke view
-        return view('berkas.create', compact('klienTersedia'));
+        return view('berkas.create', compact('klienTersedia', 'kecamatans', 'jenisPermohonans'));
     }
 
     /**
@@ -52,9 +52,9 @@ class BerkasController extends Controller
             'nomer_wa' => 'nullable|string|max:20',
             'jenis_hak' => 'required|string|max:50',
             'nomer_hak' => 'required|string|max:255',
-            'kecamatan' => 'required|string|max:255',
-            'desa' => 'required|string|max:255',
-            'jenis_permohonan' => 'required|string|max:255',
+            'kecamatan_id' => 'required|exists:kecamatans,id',
+            'desa_id' => 'required|exists:desas,id',
+            'jenis_permohonan_id' => 'required|exists:jenis_permohonans,id',
             'spa' => 'nullable|string',
             'alih_media' => 'nullable|string',
             'keterangan' => 'nullable|string',
@@ -64,7 +64,6 @@ class BerkasController extends Controller
 
         $berkas = Berkas::create($validated);
 
-        // Cek jika nomer WA ada dan template 'registrasi' aktif
         if ($berkas->nomer_wa) {
             $waService->sendNotificationOnCreate($berkas);
         }
@@ -81,8 +80,20 @@ class BerkasController extends Controller
     public function edit(Berkas $berkas)
     {
         $klienTersedia = Klien::orderBy('nama_klien', 'asc')->get();
-        $templates = WaTemplate::where('status', 'aktif')->get();
-        return view('berkas.edit', compact('berkas', 'klienTersedia', 'templates'));
+        $templates = WaTemplate::where('status_template', 'aktif')->get(); // <-- PERBAIKAN: Harus 'status_template'
+        
+        $kecamatans = Kecamatan::orderBy('nama', 'asc')->get();
+        $jenisPermohonans = JenisPermohonan::orderBy('nama', 'asc')->get();
+        $desas = Desa::where('kecamatan_id', $berkas->kecamatan_id)->orderBy('nama', 'asc')->get();
+
+        return view('berkas.edit', compact(
+            'berkas', 
+            'klienTersedia', 
+            'templates', 
+            'kecamatans', 
+            'jenisPermohonans', 
+            'desas'
+        ));
     }
 
     /**
@@ -101,9 +112,9 @@ class BerkasController extends Controller
             'nomer_wa' => 'nullable|string|max:20',
             'jenis_hak' => 'required|string|max:50',
             'nomer_hak' => 'required|string|max:255',
-            'kecamatan' => 'required|string|max:255',
-            'desa' => 'required|string|max:255',
-            'jenis_permohonan' => 'required|string|max:255',
+            'kecamatan_id' => 'required|exists:kecamatans,id',
+            'desa_id' => 'required|exists:desas,id',
+            'jenis_permohonan_id' => 'required|exists:jenis_permohonans,id',
             'spa' => 'nullable|string',
             'alih_media' => 'nullable|string',
             'keterangan' => 'nullable|string',
@@ -129,5 +140,17 @@ class BerkasController extends Controller
     {
         $berkas->delete();
         return redirect()->route('berkas.index')->with('success', 'Berkas berhasil dihapus.');
+    }
+
+    /**
+     * FUNGSI API BARU UNTUK MENGAMBIL DESA
+     * * @param  \Illuminate\Http\Request  $request
+     * @param  int  $kecamatan_id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getDesaApi(Request $request, $kecamatan_id)
+    {
+        $desas = Desa::where('kecamatan_id', $kecamatan_id)->orderBy('nama', 'asc')->get();
+        return response()->json($desas);
     }
 }

@@ -21,9 +21,18 @@ class Berkas extends Model
         'nomer_wa',
         'jenis_hak',
         'nomer_hak',
+        
+        // --- PERBAIKAN: 3 baris ini dihapus ---
+        // 'kecamatan', 
+        // 'desa',
+        // 'jenis_permohonan',
+        // ------------------------------------
+
+        // Kolom ID Baru (Ini sudah benar)
         'kecamatan_id',
         'desa_id',
         'jenis_permohonan_id',
+
         'spa',
         'alih_media',
         'keterangan',
@@ -42,7 +51,22 @@ class Berkas extends Model
      */
     public function klien()
     {
-        // Fungsi index() Anda menggunakan with('klien'), jadi relasi ini penting
         return $this->belongsTo(Klien::class);
+    }
+
+    // Relasi baru
+    public function kecamatan()
+    {
+        return $this->belongsTo(Kecamatan::class);
+    }
+
+    public function desa()
+    {
+        return $this->belongsTo(Desa::class);
+    }
+
+    public function jenisPermohonan()
+    {
+        return $this->belongsTo(JenisPermohonan::class, 'jenis_permohonan_id');
     }
 }
