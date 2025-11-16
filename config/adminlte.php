@@ -354,6 +354,28 @@ return [
             'url'  => 'klien',
             'icon' => 'fas fa-fw fa-users',
         ],
+                // MENU BARU
+        [
+            'text'    => 'Data Master',
+            'icon'    => 'fas fa-fw fa-database',
+            'submenu' => [
+                [
+                    'text' => 'Data Kecamatan',
+                    'url'  => 'kecamatan',
+                    'icon' => 'fas fa-fw fa-map-marked-alt',
+                ],
+                [
+                    'text' => 'Data Desa',
+                    'url'  => 'desa',
+                    'icon' => 'fas fa-fw fa-map-marker-alt',
+                ],
+                [
+                    'text' => 'Jenis Permohonan',
+                    'url'  => 'jenis-permohonan',
+                    'icon' => 'fas fa-fw fa-tasks',
+                ],
+            ],
+        ],
         [
             'text' => 'change_password',
             'url' => 'admin/settings',
