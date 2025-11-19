@@ -82,25 +82,22 @@
                     </div>
 
                     {{-- DROPDOWN BARU --}}
-                    <div class="form-group">
-                        <label>Kecamatan</label>
-                        <select name="kecamatan_id" id="kecamatan_id" class="form-control @error('kecamatan_id') is-invalid @enderror" required>
-                            <option value="">-- Pilih Kecamatan --</option>
-                            @foreach($kecamatans as $kec)
-                                <option value="{{ $kec->id }}" {{ old('kecamatan_id') == $kec->id ? 'selected' : '' }}>{{ $kec->nama }}</option>
-                            @endforeach
-                        </select>
-                        @error('kecamatan_id') <span class="invalid-feedback">{{ $message }}</span> @enderror
-                    </div>
+                        <div class="form-group">
+                            <label>Kecamatan</label>
+                            <select name="kecamatan_id" id="kecamatan_id" class="form-control">
+                                <option value="">Pilih Kecamatan</option>
+                                @foreach($kecamatans as $kecamatan)
+                                    <option value="{{ $kecamatan->id }}">{{ $kecamatan->nama_kecamatan }}</option>
+                                @endforeach
+                            </select>
+                        </div>
 
-                    <div class="form-group">
-                        <label>Desa</label>
-                        <select name="desa_id" id="desa_id" class="form-control @error('desa_id') is-invalid @enderror" required>
-                            <option value="">-- Pilih Kecamatan Dulu --</option>
-                        </select>
-                        @error('desa_id') <span class="invalid-feedback">{{ $message }}</span> @enderror
-                    </div>
-
+                        <div class="form-group">
+                            <label>Desa</label>
+                            <select name="desa_id" id="desa_id" class="form-control">
+                                <option value="">Pilih Desa</option>
+                            </select>
+                        </div>
                     <div class="form-group">
                         <label>Jenis Permohonan</label>
                         <select name="jenis_permohonan_id" class="form-control @error('jenis_permohonan_id') is-invalid @enderror" required>

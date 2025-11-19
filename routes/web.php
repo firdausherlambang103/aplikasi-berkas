@@ -9,8 +9,6 @@ use App\Http\Controllers\WaLogController;
 use App\Http\Controllers\KecamatanController;
 use App\Http\Controllers\DesaController;
 use App\Http\Controllers\JenisPermohonanController;
-
-
 Route::get('/', function () {
     return view('welcome');
 });
@@ -32,6 +30,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('desa', DesaController::class);
     // 'jenis-permohonan' karena nama tabelnya jamak
     Route::resource('jenis-permohonan', JenisPermohonanController::class);
+    Route::resource('wa-templates', \App\Http\Controllers\WaTemplateController::class);
+    Route::post('/log-wa-send', [WaLogController::class, 'store']);
+    Route::get('/get-desa/{id}', [DesaController::class, 'getDesaByKecamatan'])->name('get.desa');
 });
-Route::resource('wa-templates', \App\Http\Controllers\WaTemplateController::class);
-Route::post('/log-wa-send', [WaLogController::class, 'store']);

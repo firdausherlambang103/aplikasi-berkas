@@ -51,4 +51,10 @@ class DesaController extends Controller
         $desa->delete();
         return redirect()->route('desa.index')->with('success', 'Desa berhasil dihapus.');
     }
+
+    public function getDesaByKecamatan($id)
+    {
+        $desas = Desa::where('kecamatan_id', $id)->orderBy('nama', 'asc')->get();
+        return response()->json($desas);
+    }
 }
