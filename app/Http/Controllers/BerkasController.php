@@ -2,7 +2,16 @@
 
 namespace App\Http\Controllers;
 
-// ... (use statements lainnya) ...
+// PASTIKAN SEMUA MODEL INI ADA DI ATAS
+use App\Models\Berkas;
+use App\Models\Klien;
+use App\Models\Kecamatan;
+use App\Models\Desa;
+use App\Models\JenisPermohonan;
+use App\Models\WaTemplate;
+use App\Models\WaPlaceholder;
+use App\Services\WaNotificationService;
+use Illuminate\Http\Request;
 
 class BerkasController extends Controller
 {
@@ -17,7 +26,8 @@ class BerkasController extends Controller
                             ->latest()
                             ->paginate(10);
         
-        $templates = WaTemplate::where('status_template', 'aktif')->get(); // <-- PERBAIKAN: Harus 'status_template'
+        // Menggunakan 'status_template' sesuai database Anda
+        $templates = WaTemplate::where('status_template', 'aktif')->get(); 
         $placeholders = WaPlaceholder::all();
 
         return view('berkas.index', compact('semuaBerkas', 'templates', 'placeholders'));
@@ -30,10 +40,13 @@ class BerkasController extends Controller
      */
     public function create()
     {
+        // PERBAIKAN 1: Pastikan baris ini aktif (tidak di-comment)
         $klienTersedia = Klien::orderBy('nama_klien', 'asc')->get();
+        
         $kecamatans = Kecamatan::orderBy('nama', 'asc')->get();
         $jenisPermohonans = JenisPermohonan::orderBy('nama', 'asc')->get();
 
+        // PERBAIKAN 2: Tambahkan 'klienTersedia' ke compact()
         return view('berkas.create', compact('klienTersedia', 'kecamatans', 'jenisPermohonans'));
     }
 
@@ -64,6 +77,7 @@ class BerkasController extends Controller
 
         $berkas = Berkas::create($validated);
 
+        // Kirim notifikasi WA jika ada nomer WA
         if ($berkas->nomer_wa) {
             $waService->sendNotificationOnCreate($berkas);
         }
@@ -80,10 +94,12 @@ class BerkasController extends Controller
     public function edit(Berkas $berkas)
     {
         $klienTersedia = Klien::orderBy('nama_klien', 'asc')->get();
-        $templates = WaTemplate::where('status_template', 'aktif')->get(); // <-- PERBAIKAN: Harus 'status_template'
+        
+        $templates = WaTemplate::where('status_template', 'aktif')->get(); 
         
         $kecamatans = Kecamatan::orderBy('nama', 'asc')->get();
         $jenisPermohonans = JenisPermohonan::orderBy('nama', 'asc')->get();
+        // Ambil desa yang satu kecamatan dengan berkas
         $desas = Desa::where('kecamatan_id', $berkas->kecamatan_id)->orderBy('nama', 'asc')->get();
 
         return view('berkas.edit', compact(

@@ -54,8 +54,9 @@ class WaNotificationService
 
         try {
             // 3. Cari Template
+            // Menggunakan 'status_template' sesuai database Anda
             $template = WaTemplate::where('nama_template', $templateName)
-                                  ->where('status', 'aktif')
+                                  ->where('status_template', 'aktif') 
                                   ->first();
 
             if (!$template) {
@@ -63,7 +64,8 @@ class WaNotificationService
             }
 
             // 4. Ganti Placeholder
-            $message = $this->replacePlaceholders($template->isi, $berkas);
+            // Menggunakan 'template_text' sesuai database Anda
+            $message = $this->replacePlaceholders($template->template_text, $berkas);
 
             // 5. Kirim Pesan
             $this->sendMessage($berkas->nomer_wa, $message, $templateName);
@@ -80,7 +82,8 @@ class WaNotificationService
     private function replacePlaceholders(string $message, Berkas $berkas): string
     {
         $placeholders = WaPlaceholder::all();
-        $berkasData = $berkas->load('klien'); // Load relasi klien
+        // Muat semua relasi yang mungkin diperlukan
+        $berkasData = $berkas->load('klien', 'kecamatan', 'desa', 'jenisPermohonan'); 
 
         foreach ($placeholders as $placeholder) {
             $key = $placeholder->nama_kolom; // e.g., 'nama_pemohon'
@@ -90,9 +93,20 @@ class WaNotificationService
             if (isset($berkasData->$key)) {
                 $value = $berkasData->$key;
             } 
-            // Jika tidak ada, cek di data Klien terkait
-            else if (isset($berkasData->klien->$key)) {
+            // PERBAIKAN: Cek dulu apakah $berkasData->klien ADA (tidak null), 
+            // BARU cek propertinya.
+            else if (isset($berkasData->klien) && isset($berkasData->klien->$key)) { 
                 $value = $berkasData->klien->$key;
+            }
+            // Tambahan untuk data relasi baru (kecamatan, desa, dll)
+            else if (isset($berkasData->kecamatan) && $key == 'nama_kecamatan') {
+                $value = $berkasData->kecamatan->nama;
+            }
+            else if (isset($berkasData->desa) && $key == 'nama_desa') {
+                $value = $berkasData->desa->nama;
+            }
+            else if (isset($berkasData->jenisPermohonan) && $key == 'nama_permohonan') {
+                $value = $berkasData->jenisPermohonan->nama;
             }
 
             // Ganti placeholder (e.g., {nama_pemohon}) dengan value

@@ -26,16 +26,15 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label>Nomer Berkas (Internal)</label>
-                        <input type="text" name="nomer_berkas" class="form-control" placeholder="Contoh: 2025/001" value="{{ old('nomer_berkas') }}">
+                        <input type="text" name="nomer_berkas" class="form-control @error('nomer_berkas') is-invalid @enderror" placeholder="Contoh: 2025/001" value="{{ old('nomer_berkas') }}">
+                        @error('nomer_berkas') <span class="invalid-feedback">{{ $message }}</span> @enderror
                     </div>
 
                     <div class="form-group">
                         <label>Kode Klien (Opsional - Auto-fill WA)</label>
-                        {{-- Dropdown Klien --}}
-                        <select id="kode_klien_select" name="klien_id" class="form-control">
+                        <select id="kode_klien_select" name="klien_id" class="form-control @error('klien_id') is-invalid @enderror">
                             <option value="">-- Pilih Kode (untuk auto-fill) --</option>
                             
-                            {{-- PERBAIKAN 1: Menambahkan 'data-nomer-wa' --}}
                             @foreach($klienTersedia as $klien)
                                 <option value="{{ $klien->id }}" 
                                         data-nomer-wa="{{ $klien->nomer_wa }}" 
@@ -44,26 +43,28 @@
                                 </option>
                             @endforeach
                         </select>
+                         @error('klien_id') <span class="invalid-feedback">{{ $message }}</span> @enderror
                     </div>
                     
                     <hr>
                     
                     <div class="form-group">
                         <label>Nama Pemohon (Wajib)</label>
-                        <input type="text" name="nama_pemohon" class="form-control" placeholder="Masukkan nama pemohon" value="{{ old('nama_pemohon') }}" required>
+                        <input type="text" name="nama_pemohon" class="form-control @error('nama_pemohon') is-invalid @enderror" placeholder="Masukkan nama pemohon" value="{{ old('nama_pemohon') }}" required>
+                         @error('nama_pemohon') <span class="invalid-feedback">{{ $message }}</span> @enderror
                     </div>
 
                     <div class="form-group">
                         <label>Nomer WA Pemohon</label>
-                        {{-- Input ini akan diisi otomatis oleh JS di bawah --}}
-                        <input type="text" name="nomer_wa" id="nomer_wa" class="form-control" placeholder="Cth: 628123456789 (Pilih Klien atau isi manual)" value="{{ old('nomer_wa') }}">
+                        <input type="text" name="nomer_wa" id="nomer_wa" class="form-control @error('nomer_wa') is-invalid @enderror" placeholder="Cth: 628123456789 (Pilih Klien atau isi manual)" value="{{ old('nomer_wa') }}">
+                        @error('nomer_wa') <span class="invalid-feedback">{{ $message }}</span> @enderror
                     </div>
 
                     <hr>
 
                     <div class="form-group">
                         <label>Jenis Hak</label>
-                        <select name="jenis_hak" class="form-control" required>
+                        <select name="jenis_hak" class="form-control @error('jenis_hak') is-invalid @enderror" required>
                             <option value="">-- Pilih Jenis Hak --</option>
                             <option value="SHM" {{ old('jenis_hak') == 'SHM' ? 'selected' : '' }}>SHM</option>
                             <option value="SHGB" {{ old('jenis_hak') == 'SHGB' ? 'selected' : '' }}>SHGB</option>
@@ -71,26 +72,44 @@
                             <option value="SHP" {{ old('jenis_hak') == 'SHP' ? 'selected' : '' }}>SHP</option>
                             <option value="Leter C" {{ old('jenis_hak') == 'Leter C' ? 'selected' : '' }}>Leter C</option>
                         </select>
+                         @error('jenis_hak') <span class="invalid-feedback">{{ $message }}</span> @enderror
                     </div>
                     
                     <div class="form-group">
                         <label>Nomer Hak</label>
-                        <input type="text" name="nomer_hak" class="form-control" value="{{ old('nomer_hak') }}" required>
+                        <input type="text" name="nomer_hak" class="form-control @error('nomer_hak') is-invalid @enderror" value="{{ old('nomer_hak') }}" required>
+                         @error('nomer_hak') <span class="invalid-feedback">{{ $message }}</span> @enderror
                     </div>
 
+                    {{-- DROPDOWN BARU --}}
                     <div class="form-group">
                         <label>Kecamatan</label>
-                        <input type="text" name="kecamatan" class="form-control" value="{{ old('kecamatan') }}" required>
+                        <select name="kecamatan_id" id="kecamatan_id" class="form-control @error('kecamatan_id') is-invalid @enderror" required>
+                            <option value="">-- Pilih Kecamatan --</option>
+                            @foreach($kecamatans as $kec)
+                                <option value="{{ $kec->id }}" {{ old('kecamatan_id') == $kec->id ? 'selected' : '' }}>{{ $kec->nama }}</option>
+                            @endforeach
+                        </select>
+                        @error('kecamatan_id') <span class="invalid-feedback">{{ $message }}</span> @enderror
                     </div>
 
                     <div class="form-group">
                         <label>Desa</label>
-                        <input type="text" name="desa" class="form-control" value="{{ old('desa') }}" required>
+                        <select name="desa_id" id="desa_id" class="form-control @error('desa_id') is-invalid @enderror" required>
+                            <option value="">-- Pilih Kecamatan Dulu --</option>
+                        </select>
+                        @error('desa_id') <span class="invalid-feedback">{{ $message }}</span> @enderror
                     </div>
 
                     <div class="form-group">
                         <label>Jenis Permohonan</label>
-                        <input type="text" name="jenis_permohonan" class="form-control" value="{{ old('jenis_permohonan') }}" required>
+                        <select name="jenis_permohonan_id" class="form-control @error('jenis_permohonan_id') is-invalid @enderror" required>
+                             <option value="">-- Pilih Jenis Permohonan --</option>
+                             @foreach($jenisPermohonans as $jp)
+                                <option value="{{ $jp->id }}" {{ old('jenis_permohonan_id') == $jp->id ? 'selected' : '' }}>{{ $jp->nama }}</option>
+                            @endforeach
+                        </select>
+                        @error('jenis_permohonan_id') <span class="invalid-feedback">{{ $message }}</span> @enderror
                     </div>
                 </div>
 
@@ -112,14 +131,15 @@
                     </div>
 
                     <hr>
-                    {{-- FIELD BARU UNTUK PEMBAYARAN --}}
                     <div class="form-group">
                         <label>Kode Billing</label>
-                        <input type="text" name="kode_biling" class="form-control" value="{{ old('kode_biling') }}">
+                        <input type="text" name="kode_biling" class="form-control @error('kode_biling') is-invalid @enderror" value="{{ old('kode_biling') }}">
+                        @error('kode_biling') <span class="invalid-feedback">{{ $message }}</span> @enderror
                     </div>
                     <div class="form-group">
                         <label>Jumlah Bayar (Hanya Angka)</label>
-                        <input type="number" name="jumlah_bayar" class="form-control" value="{{ old('jumlah_bayar') }}" placeholder="Contoh: 500000">
+                        <input type="number" name="jumlah_bayar" class="form-control @error('jumlah_bayar') is-invalid @enderror" value="{{ old('jumlah_bayar') }}" placeholder="Contoh: 500000">
+                        @error('jumlah_bayar') <span class="invalid-feedback">{{ $message }}</span> @enderror
                     </div>
 
                 </div>
@@ -133,29 +153,73 @@
 @stop
 
 @section('js')
-{{-- PERBAIKAN 2: Mengganti logika JS menjadi lebih stabil (tanpa fetch API) --}}
 <script>
     $(document).ready(function() {
-        // Fungsi ini akan berjalan setiap kali dropdown Klien (#kode_klien_select) berubah
+        // --- LOGIKA 1: AUTO-FILL NOMER WA ---
         $('#kode_klien_select').on('change', function() {
-            
-            // 1. Ambil <option> yang sedang dipilih
             var selectedOption = $(this).find('option:selected');
-            
-            // 2. Ambil nilai dari atribut 'data-nomer-wa' yang tadi kita tambahkan di HTML
-            //    Gunakan || '' untuk memastikan nilainya string kosong jika atribut tidak ada/kosong
             var nomerWa = selectedOption.data('nomer-wa') || '';
-
-            // 3. Masukkan nilai nomerWa ke input Nomer WA (#nomer_wa)
             $('#nomer_wa').val(nomerWa);
         });
-
-        // (Tambahan Opsional)
-        // Jika halaman dimuat ulang (misal karena error validasi) dan ada Klien yang
-        // sudah terpilih (dari 'old()'), kita picu 'change' agar Nomer WA-nya
-        // langsung terisi saat halaman dimuat.
+        
+        // Trigger saat load jika ada old value
         if ($('#kode_klien_select').val() != "") {
             $('#kode_klien_select').trigger('change');
+        }
+
+        // --- LOGIKA 2: DEPENDENT DROPDOWN (KECAMATAN -> DESA) ---
+        $('#kecamatan_id').on('change', function() {
+            var kecamatanID = $(this).val();
+            var desaSelect = $('#desa_id');
+            
+            desaSelect.empty().append('<option value="">Loading...</option>'); // Kosongkan & beri loading
+
+            if (kecamatanID) {
+                // Panggil API
+                // Pastikan URL-nya benar. '/api/get-desa/...'
+                $.ajax({
+                    url: '/api/get-desa/' + kecamatanID,
+                    type: "GET",
+                    dataType: "json",
+                    success:function(data) {
+                        desaSelect.empty().append('<option value="">-- Pilih Desa --</option>');
+                        $.each(data, function(key, value) {
+                            desaSelect.append('<option value="'+ value.id +'">'+ value.nama +'</option>');
+                        });
+                    },
+                    error: function() {
+                         desaSelect.empty().append('<option value="">Gagal mengambil data</option>');
+                    }
+                });
+            } else {
+                desaSelect.empty().append('<option value="">-- Pilih Kecamatan Dulu --</option>');
+            }
+        });
+
+        // --- LOGIKA 3: HANDLER UNTUK OLD() VALUE SAAT VALIDASI ERROR ---
+        // Ini akan otomatis memilih ulang desa jika ada error validasi
+        var oldKecamatanId = "{{ old('kecamatan_id') }}";
+        var oldDesaId = "{{ old('desa_id') }}";
+
+        if (oldKecamatanId) {
+            $('#kecamatan_id').val(oldKecamatanId); // Set kecamatan
+            
+            var desaSelect = $('#desa_id');
+            desaSelect.empty().append('<option value="">Loading...</option>');
+
+            $.ajax({
+                url: '/api/get-desa/' + oldKecamatanId,
+                type: "GET",
+                dataType: "json",
+                success:function(data) {
+                    desaSelect.empty().append('<option value="">-- Pilih Desa --</option>');
+                    $.each(data, function(key, value) {
+                        // Cek jika desa ini adalah desa yang tersimpan di old()
+                        var isSelected = (value.id == oldDesaId) ? 'selected' : '';
+                        desaSelect.append('<option value="'+ value.id +'" '+ isSelected +'>'+ value.nama +'</option>');
+                    });
+                }
+            });
         }
     });
 </script>
