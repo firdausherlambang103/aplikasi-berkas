@@ -297,6 +297,17 @@ return [
     | https://github.com/jeroennoten/Laravel-AdminLTE/wiki/Menu-Configuration
     |
     */
+/*
+    |--------------------------------------------------------------------------
+    | Menu Items
+    |--------------------------------------------------------------------------
+    |
+    | Here we can modify the sidebar/top navigation of the admin panel.
+    |
+    | For detailed instructions you can look here:
+    | https://github.com/jeroennoten/Laravel-AdminLTE/wiki/Menu-Configuration
+    |
+    */
 
     'menu' => [
         // Navbar items:
@@ -313,50 +324,48 @@ return [
         // Sidebar items:
         [
             'type' => 'sidebar-menu-search',
-            'text' => 'search',
+            'text' => 'Cari menu...',
         ],
 
+        // --- MENU UTAMA ---
+        ['header' => 'MENU UTAMA'],
+        
         [
-            'text' => 'blog',
-            'url' => 'admin/blog',
-            'can' => 'manage-blog',
-        ],
-        [
-            'text' => 'pages',
-            'url' => 'admin/pages',
-            'icon' => 'far fa-fw fa-file',
-            'label' => 4,
-            'label_color' => 'success',
-        ],
-        ['header' => 'account_settings'],
-        [
-            'text' => 'profile',
-            'url' => 'admin/settings',
-            'icon' => 'fas fa-fw fa-user',
+            'text' => 'Dashboard',
+            'url'  => 'home',
+            'icon' => 'fas fa-fw fa-tachometer-alt',
         ],
         [
             'text' => 'Manajemen Berkas',
             'url'  => 'berkas',
             'icon' => 'fas fa-fw fa-file-alt',
-        ],
-        [
-            'text' => 'Template WA',
-            'url'  => 'wa-templates',
-            'icon' => 'fab fa-fw fa-whatsapp-square',
-        ],
-        [
-        'text' => 'Placeholder WA',
-        'url'  => 'wa-placeholders',
-        'icon' => 'fas fa-fw fa-puzzle-piece',
+            'label_color' => 'success',
         ],
         [
             'text' => 'Manajemen Klien', 
             'url'  => 'klien',
             'icon' => 'fas fa-fw fa-users',
         ],
-                // MENU BARU
+
+        // --- FITUR WHATSAPP ---
+        ['header' => 'NOTIFIKASI WHATSAPP'],
+        
         [
-            'text'    => 'Data Master',
+            'text' => 'Template Pesan',
+            'url'  => 'wa-templates',
+            'icon' => 'fab fa-fw fa-whatsapp',
+        ],
+        [
+            'text' => 'Kode Placeholder',
+            'url'  => 'wa-placeholders',
+            'icon' => 'fas fa-fw fa-code',
+        ],
+
+        // --- DATA MASTER ---
+        ['header' => 'DATA REFERENSI'],
+        
+        [
+            'text'    => 'Data Wilayah & Jenis',
             'icon'    => 'fas fa-fw fa-database',
             'submenu' => [
                 [
@@ -376,67 +385,20 @@ return [
                 ],
             ],
         ],
+
+        // --- PENGATURAN AKUN ---
+        ['header' => 'PENGATURAN'],
+        
         [
-            'text' => 'change_password',
-            'url' => 'admin/settings',
-            'icon' => 'fas fa-fw fa-lock',
-        ],
-        [
-            'text' => 'multilevel',
-            'icon' => 'fas fa-fw fa-share',
-            'submenu' => [
-                [
-                    'text' => 'level_one',
-                    'url' => '#',
-                ],
-                [
-                    'text' => 'level_one',
-                    'url' => '#',
-                    'submenu' => [
-                        [
-                            'text' => 'level_two',
-                            'url' => '#',
-                        ],
-                        [
-                            'text' => 'level_two',
-                            'url' => '#',
-                            'submenu' => [
-                                [
-                                    'text' => 'level_three',
-                                    'url' => '#',
-                                ],
-                                [
-                                    'text' => 'level_three',
-                                    'url' => '#',
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-                [
-                    'text' => 'level_one',
-                    'url' => '#',
-                ],
+            'text' => 'Logout',
+            'url'  => '#',
+            'icon' => 'fas fa-fw fa-sign-out-alt',
+            'icon_color' => 'red',
+            'attributes' => [
+                'onclick' => "event.preventDefault(); document.getElementById('logout-form').submit();",
             ],
         ],
-        ['header' => 'labels'],
-        [
-            'text' => 'important',
-            'icon_color' => 'red',
-            'url' => '#',
-        ],
-        [
-            'text' => 'warning',
-            'icon_color' => 'yellow',
-            'url' => '#',
-        ],
-        [
-            'text' => 'information',
-            'icon_color' => 'cyan',
-            'url' => '#',
-        ],
     ],
-
     /*
     |--------------------------------------------------------------------------
     | Menu Filters

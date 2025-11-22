@@ -20,10 +20,31 @@
 
     <div class="card">
         <div class="card-header">
-            <a href="{{ route('berkas.create') }}" class="btn btn-primary">Tambah Berkas Baru</a>
+            <h3 class="card-title">
+                <a href="{{ route('berkas.create') }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus"></i> Tambah Berkas Baru
+                </a>
+            </h3>
+
+            {{-- --- FITUR PENCARIAN --- --}}
+            <div class="card-tools">
+                <form action="{{ route('berkas.index') }}" method="GET">
+                    <div class="input-group input-group-sm" style="width: 250px;">
+                        <input type="text" name="search" class="form-control float-right" placeholder="Cari Berkas/Pemohon..." value="{{ request('search') }}">
+                        <div class="input-group-append">
+                            <button type="submit" class="btn btn-default">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            {{-- --- END FITUR PENCARIAN --- --}}
         </div>
-        <div class="card-body">
-            <table class="table table-bordered table-striped" id="berkas-table">
+
+        <div class="card-body table-responsive p-0">
+            {{-- Tambahkan table-responsive agar tabel aman di layar kecil --}}
+            <table class="table table-bordered table-striped table-hover text-nowrap" id="berkas-table">
                 <thead>
                     <tr>
                         <th style="width: 10px">ID</th>
@@ -31,30 +52,46 @@
                         <th>Nama Pemohon</th>
                         <th>Nomer Hak</th>
                         <th>Kec/Desa</th>
-                        <th style="width: 180px">Info WA</th> 
+                        <th>Status</th> {{-- Kolom Status Baru --}}
+                        <th style="width: 150px">Info WA</th> 
                         <th style="width: 150px">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($semuaBerkas as $berkas)
+                    @forelse($semuaBerkas as $berkas)
                     <tr>
                         <td>{{ $berkas->id }}</td>
                         <td>{{ $berkas->nomer_berkas }}</td>
                         <td>
                             {{ $berkas->nama_pemohon }}
-                            {{-- FAKTA A: Logika ini berjalan, artinya $berkas->nomer_wa ADA --}}
                             @if($berkas->nomer_wa)
-                                <br><small>WA: {{ $berkas->nomer_wa }}</small>
+                                <br><small class="text-muted"><i class="fab fa-whatsapp"></i> {{ $berkas->nomer_wa }}</small>
                             @endif
                         </td>
                         <td>{{ $berkas->jenis_hak }} / {{ $berkas->nomer_hak }}</td>
-                        <td>{{ $berkas->kecamatan }} / {{ $berkas->desa }}</td>
                         
-                        {{-- =============================================== --}}
-                        {{--      LOGIKA TOMBOL WA (DIPERBARUI)              --}}
-                        {{-- =============================================== --}}
                         <td>
-                            {{-- Cek HANYA jika berkas punya nomer WA --}}
+                            {{-- Tampilkan Nama Kecamatan/Desa dengan aman --}}
+                            {{ $berkas->dataKecamatan->nama ?? '-' }} 
+                            / 
+                            {{ $berkas->dataDesa->nama ?? '-' }}
+                        </td>
+
+                        <td>
+                            {{-- Badge Status Warna-warni --}}
+                            @php
+                                $badgeClass = match($berkas->status) {
+                                    'Selesai' => 'badge-success',
+                                    'Proses' => 'badge-info',
+                                    'Kendala' => 'badge-warning',
+                                    'Dibatalkan' => 'badge-danger',
+                                    default => 'badge-secondary'
+                                };
+                            @endphp
+                            <span class="badge {{ $badgeClass }}">{{ $berkas->status }}</span>
+                        </td>
+                        
+                        <td>
                             @if($berkas->nomer_wa && $templates->count() > 0)
                                 <div class="btn-group">
                                     <button type="button" class="btn btn-success btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -65,9 +102,7 @@
                                             @php
                                                 $logCount = $berkas->waLogs->where('wa_template_id', $template->id)->count();
                                                 $nomerWa = $berkas->nomer_wa;
-                                                if(substr($nomerWa, 0, 1) == "0") {
-                                                    $nomerWa = "62" . substr($nomerWa, 1);
-                                                }
+                                                if(substr($nomerWa, 0, 1) == "0") { $nomerWa = "62" . substr($nomerWa, 1); }
                                                 $nomerWa = str_replace('+', '', $nomerWa); 
                                             @endphp
                                             
@@ -87,39 +122,43 @@
                                 </div>
                             @else
                                 <small class="text-muted">
-                                    {{-- FAKTA B: Logika ini berjalan, artinya $berkas->nomer_wa KOSONG --}}
-                                    {{-- INI ADALAH BUKTI CACHE KORUP --}}
-                                    @if(!$berkas->nomer_wa)
-                                    (No WA terdaftar)
-                                    @elseif($templates->count() == 0)
-                                    (Belum ada template)
-                                    @endif
+                                    @if(!$berkas->nomer_wa) (No WA) @else (No Template) @endif
                                 </small>
                             @endif
                         </td>
 
-                        {{-- =============================================== --}}
-                        {{--          KOLOM AKSI (Telah dipisah)             --}}
-                        {{-- =============================================== --}}
                         <td>
                             <form action="{{ route('berkas.destroy', $berkas->id) }}" method="POST" style="display:inline-block;">
-                                <a href="{{ route('berkas.edit', $berkas->id) }}" class="btn btn-warning btn-sm">Edit</a>
+                                <a href="{{ route('berkas.edit', $berkas->id) }}" class="btn btn-warning btn-sm" title="Edit"><i class="fa fa-edit"></i></a>
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Yakin ingin menghapus berkas ini?')">Hapus</button>
+                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Yakin ingin menghapus berkas ini?')" title="Hapus"><i class="fa fa-trash"></i></button>
                             </form>
                         </td>
                     </tr>
-                    @endforeach
+                    @empty
+                    <tr>
+                        <td colspan="8" class="text-center">
+                            @if(request('search'))
+                                Data tidak ditemukan untuk pencarian "<strong>{{ request('search') }}</strong>"
+                            @else
+                                Belum ada data berkas.
+                            @endif
+                        </td>
+                    </tr>
+                    @endforelse
                 </tbody>
             </table>
+        </div>
+        
+        <div class="card-footer clearfix">
+            {{-- Pagination Link --}}
+            {{ $semuaBerkas->links() }}
         </div>
     </div>
 
 
-    {{-- ================================================= --}}
-    {{--    MODAL UNTUK KONFIRMASI PENGIRIMAN PESAN WA       --}}
-    {{-- ================================================= --}}
+    {{-- MODAL KONFIRMASI PENGIRIMAN PESAN WA --}}
     <div class="modal fade" id="kirimWaModal" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
@@ -154,30 +193,30 @@
 <script>
 $(document).ready(function() {
     
-    // --- 0. AMBIL DATA PLACEHOLDER DARI CONTROLLER ---
     const allPlaceholders = @json($placeholders);
 
-    // --- 1. Inisialisasi DataTables (DIBUNGKUS DENGAN TRY...CATCH) ---
+    // --- Inisialisasi DataTables (HANYA FITUR SORTING, KARENA PAGING & SEARCH KITA PAKAI LARAVEL) ---
     try {
         $('#berkas-table').DataTable({
-            "paging": true,
+            "paging": false,     // Matikan paging datatables (kita pakai Laravel punya)
             "lengthChange": false,
-            "searching": true,
+            "searching": false,  // Matikan search datatables (kita pakai input search custom di atas)
             "ordering": true,
-            "info": true,
+            "info": false,
             "autoWidth": false,
             "responsive": true,
         });
     } catch (e) {
-        console.error("Gagal memuat DataTables:", e);
-        if (typeof toastr !== 'undefined') {
-            toastr.warning('Plugin DataTables gagal dimuat. Fitur tabel mungkin non-aktif.', 'Peringatan');
-        } else {
-            console.warn("Plugin DataTables gagal dimuat.");
-        }
+        console.warn("Plugin DataTables gagal dimuat.");
     }
 
-    // --- 2. Event Handler untuk Tombol di Tabel (Membuka Modal) ---
+    // --- FUNGSI BANTUAN NESTED DATA ---
+    function getNestedValue(obj, path) {
+        if (!path) return '';
+        return path.split('.').reduce((acc, part) => (acc && acc[part] !== undefined) ? acc[part] : '', obj);
+    }
+
+    // --- Handler Tombol Buka Modal ---
     $('body').on('click', '.btn-kirim-wa', function(e) {
         e.preventDefault();
         
@@ -189,24 +228,27 @@ $(document).ready(function() {
         const dataBerkas = button.data('berkas-json');
         const dataKlien = button.data('klien-json');
 
-        // --- Logika Penggantian Placeholder Dinamis (Sudah Benar) ---
         let pesanFinal = templateText;
+        
         allPlaceholders.forEach(function(ph) {
-            const key = ph.placeholder_key; // Cth: [nama]
-            const source = ph.data_source;  // Cth: klien.nama_klien
+            const key = ph.placeholder_key; 
+            const source = ph.data_source;  
             
             let value = ''; 
-            const sourceParts = source.split('.');
-            const relation = sourceParts[0]; // 'klien' atau 'berkas'
-            const column = sourceParts[1]; // 'nama_klien' atau 'nomer_hak'
-
-            if (relation === 'klien' && dataKlien) {
-                value = dataKlien[column] || ''; 
-            } else if (relation === 'berkas' && dataBerkas) {
-                value = dataBerkas[column] || ''; 
-            }
+            const firstDotIndex = source.indexOf('.');
             
-            // Ganti placeholder dengan nilainya
+            if (firstDotIndex !== -1) {
+                const root = source.substring(0, firstDotIndex); 
+                const path = source.substring(firstDotIndex + 1); 
+
+                if (root === 'klien' && dataKlien) {
+                    value = getNestedValue(dataKlien, path);
+                } else if (root === 'berkas' && dataBerkas) {
+                    value = getNestedValue(dataBerkas, path);
+                }
+            }
+
+            if (typeof value === 'object') value = ''; 
             pesanFinal = pesanFinal.replace(new RegExp(key.replace(/\[/g, '\\[').replace(/\]/g, '\\]'), 'g'), value);
         });
         
@@ -219,7 +261,7 @@ $(document).ready(function() {
     });
 
 
-    // --- 3. Event Handler untuk Tombol "Kirim Sekarang" di dalam Modal ---
+    // --- Handler Tombol "Kirim Sekarang" ---
     $('body').on('click', '#btn-kirim-final', function() {
         
         const button = $(this);
@@ -229,11 +271,7 @@ $(document).ready(function() {
         const wa_template_id = $('#modal-template-id').val();
 
         if (!nomor || !pesan || !berkas_id || !wa_template_id) {
-            if (typeof toastr !== 'undefined') {
-                toastr.error('Data tidak lengkap. Gagal mengirim.');
-            } else {
-                alert('Data tidak lengkap. Gagal mengirim.'); 
-            }
+            alert('Data tidak lengkap. Gagal mengirim.'); 
             return;
         }
 
@@ -252,25 +290,38 @@ $(document).ready(function() {
             })
         })
         .then(response => {
-            if (!response.ok) {
-                 return response.json().then(errData => {
-                    throw new Error(errData.message || `Server merespon dengan error: ${response.status}`);
-                }).catch(() => {
-                    throw new Error(`Server merespon dengan error: ${response.status}`);
-                });
-            }
+            if (!response.ok) throw new Error(`Server WA Error: ${response.status}`);
             return response.json();
         })
         .then(data => {
             if (data.success) {
-                if (typeof toastr !== 'undefined') {
-                    toastr.success('Pesan berhasil terkirim!'); 
-                } else {
-                    alert('Pesan berhasil terkirim!'); 
-                }
-                $('#kirimWaModal').modal('hide');
-                // Reload halaman untuk update counter jumlah terkirim
-                location.reload(); 
+                
+                // LAPOR LOG KE LARAVEL
+                fetch('/log-wa-send', { 
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') 
+                    },
+                    body: JSON.stringify({
+                        berkas_id: berkas_id,
+                        wa_template_id: wa_template_id
+                    })
+                })
+                .then(res => {
+                    if(res.ok) {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.success('Pesan terkirim & Log disimpan!'); 
+                        } else {
+                            alert('Pesan terkirim & Log disimpan!'); 
+                        }
+                        $('#kirimWaModal').modal('hide');
+                        location.reload(); 
+                    } else {
+                        alert("Pesan terkirim, tapi log gagal disimpan.");
+                    }
+                });
+
             } else {
                 if (typeof toastr !== 'undefined') {
                     toastr.error('Gagal mengirim: ' + data.message);
@@ -281,11 +332,7 @@ $(document).ready(function() {
         })
         .catch(error => {
             console.error('Error saat fetch:', error);
-            if (typeof toastr !== 'undefined') {
-                toastr.error('GAGAL MENGHUBUNGI SERVER WA.<br>Pastikan server Node.js berjalan.', 'Server Error');
-            } else {
-                alert('GAGAL MENGHUBUNGI SERVER WA.\n\nError: ' + error.message); 
-            }
+            alert('Gagal menghubungi Server WA. Pastikan Node.js berjalan.'); 
         })
         .finally(() => {
             button.html(originalText);

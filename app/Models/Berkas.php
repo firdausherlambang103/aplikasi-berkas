@@ -55,18 +55,26 @@ class Berkas extends Model
     }
 
     // Relasi baru
-    public function kecamatan()
+    public function dataKecamatan()
     {
-        return $this->belongsTo(Kecamatan::class);
+        return $this->belongsTo(Kecamatan::class, 'kecamatan_id');
     }
 
-    public function desa()
+    // UBAH DARI: public function desa()
+    // MENJADI:
+    public function dataDesa()
     {
-        return $this->belongsTo(Desa::class);
+        return $this->belongsTo(Desa::class, 'desa_id');
     }
 
     public function jenisPermohonan()
     {
         return $this->belongsTo(JenisPermohonan::class, 'jenis_permohonan_id');
+    }
+
+    public function waLogs()
+    {
+        // Pastikan class WaLog di-import atau panggil namespace lengkap
+        return $this->hasMany(WaLog::class, 'berkas_id');
     }
 }

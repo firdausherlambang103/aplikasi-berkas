@@ -19,7 +19,8 @@ Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name
 
 // Grup route yang memerlukan login
 Route::middleware(['auth'])->group(function () {
-    Route::resource('berkas', BerkasController::class);
+    //Route::resource('berkas', BerkasController::class);
+    Route::resource('berkas', BerkasController::class)->parameters(['berkas' => 'berkas']);
     Route::get('/pengaturan-pesan', [PengaturanController::class, 'index'])->name('pengaturan.index');
     Route::post('/pengaturan-pesan', [PengaturanController::class, 'update'])->name('pengaturan.update');
     // Anda perlu membuat CRUD untuk Klien juga agar bisa mendaftarkan kode

@@ -22,7 +22,6 @@
         <form action="{{ route('berkas.store') }}" method="POST">
             @csrf
             <div class="row">
-                <!-- Kolom Kiri -->
                 <div class="col-md-6">
                     <div class="form-group">
                         <label>Nomer Berkas (Internal)</label>
@@ -34,7 +33,6 @@
                         <label>Kode Klien (Opsional - Auto-fill WA)</label>
                         <select id="kode_klien_select" name="klien_id" class="form-control @error('klien_id') is-invalid @enderror">
                             <option value="">-- Pilih Kode (untuk auto-fill) --</option>
-                            
                             @foreach($klienTersedia as $klien)
                                 <option value="{{ $klien->id }}" 
                                         data-nomer-wa="{{ $klien->nomer_wa }}" 
@@ -56,7 +54,7 @@
 
                     <div class="form-group">
                         <label>Nomer WA Pemohon</label>
-                        <input type="text" name="nomer_wa" id="nomer_wa" class="form-control @error('nomer_wa') is-invalid @enderror" placeholder="Cth: 628123456789 (Pilih Klien atau isi manual)" value="{{ old('nomer_wa') }}">
+                        <input type="text" name="nomer_wa" id="nomer_wa" class="form-control @error('nomer_wa') is-invalid @enderror" placeholder="Cth: 628123456789" value="{{ old('nomer_wa') }}">
                         @error('nomer_wa') <span class="invalid-feedback">{{ $message }}</span> @enderror
                     </div>
 
@@ -81,23 +79,25 @@
                          @error('nomer_hak') <span class="invalid-feedback">{{ $message }}</span> @enderror
                     </div>
 
-                    {{-- DROPDOWN BARU --}}
-                        <div class="form-group">
-                            <label>Kecamatan</label>
-                            <select name="kecamatan_id" id="kecamatan_id" class="form-control">
-                                <option value="">Pilih Kecamatan</option>
-                                @foreach($kecamatans as $kecamatan)
-                                    <option value="{{ $kecamatan->id }}">{{ $kecamatan->nama_kecamatan }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                    {{-- DROPDOWN KECAMATAN --}}
+                    <div class="form-group">
+                        <label>Kecamatan</label>
+                        <select name="kecamatan_id" id="kecamatan_id" class="form-control">
+                            <option value="">Pilih Kecamatan</option>
+                            @foreach($kecamatans as $kecamatan)
+                                <option value="{{ $kecamatan->id }}">{{ $kecamatan->nama ?? $kecamatan->nama_kecamatan }}</option>
+                            @endforeach
+                        </select>
+                    </div>
 
-                        <div class="form-group">
-                            <label>Desa</label>
-                            <select name="desa_id" id="desa_id" class="form-control">
-                                <option value="">Pilih Desa</option>
-                            </select>
-                        </div>
+                    {{-- DROPDOWN DESA --}}
+                    <div class="form-group">
+                        <label>Desa</label>
+                        <select name="desa_id" id="desa_id" class="form-control">
+                            <option value="">Pilih Kecamatan Terlebih Dahulu</option>
+                        </select>
+                    </div>
+
                     <div class="form-group">
                         <label>Jenis Permohonan</label>
                         <select name="jenis_permohonan_id" class="form-control @error('jenis_permohonan_id') is-invalid @enderror" required>
@@ -110,8 +110,36 @@
                     </div>
                 </div>
 
-                <!-- Kolom Kanan -->
                 <div class="col-md-6">
+                    {{-- INPUT BARU: KOREKTOR --}}
+                    <div class="form-group">
+                        <label>Korektor</label>
+                        <select name="korektor" class="form-control @error('korektor') is-invalid @enderror">
+                            <option value="">-- Pilih Korektor (User) --</option>
+                            @foreach($users as $user)
+                                <option value="{{ $user->name }}" {{ old('korektor') == $user->name ? 'selected' : '' }}>
+                                    {{ $user->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('korektor') <span class="invalid-feedback">{{ $message }}</span> @enderror
+                    </div>
+
+                    {{-- INPUT BARU: STATUS --}}
+                    <div class="form-group">
+                        <label>Status Berkas</label>
+                        <select name="status" class="form-control @error('status') is-invalid @enderror">
+                            <option value="Baru" {{ old('status') == 'Baru' ? 'selected' : '' }}>Baru</option>
+                            <option value="Proses" {{ old('status') == 'Proses' ? 'selected' : '' }}>Proses</option>
+                            <option value="Selesai" {{ old('status') == 'Selesai' ? 'selected' : '' }}>Selesai</option>
+                            <option value="Kendala" {{ old('status') == 'Kendala' ? 'selected' : '' }}>Kendala</option>
+                            <option value="Dibatalkan" {{ old('status') == 'Dibatalkan' ? 'selected' : '' }}>Dibatalkan</option>
+                        </select>
+                        @error('status') <span class="invalid-feedback">{{ $message }}</span> @enderror
+                    </div>
+
+                    <hr>
+
                     <div class="form-group">
                         <label>SPA</label>
                         <textarea name="spa" class="form-control" rows="3">{{ old('spa') }}</textarea>
@@ -124,7 +152,7 @@
 
                     <div class="form-group">
                         <label>Keterangan</label>
-                        <textarea name="keterangan" class="form-control" rows="8">{{ old('keterangan') }}</textarea>
+                        <textarea name="keterangan" class="form-control" rows="5">{{ old('keterangan') }}</textarea>
                     </div>
 
                     <hr>
@@ -149,33 +177,39 @@
 </div>
 @stop
 
+@section('css')
+<style>
+    select.form-control option {
+        color: #333 !important;
+        background-color: #fff !important;
+    }
+    .dark-mode select.form-control option {
+        color: #000 !important;
+        background-color: #fff !important;
+    }
+</style>
+@stop
+
 @section('js')
 <script>
     $(document).ready(function() {
-        // --- LOGIKA 1: AUTO-FILL NOMER WA ---
+        // Auto-fill WA
         $('#kode_klien_select').on('change', function() {
             var selectedOption = $(this).find('option:selected');
             var nomerWa = selectedOption.data('nomer-wa') || '';
             $('#nomer_wa').val(nomerWa);
         });
-        
-        // Trigger saat load jika ada old value
-        if ($('#kode_klien_select').val() != "") {
-            $('#kode_klien_select').trigger('change');
-        }
+        if ($('#kode_klien_select').val() != "") { $('#kode_klien_select').trigger('change'); }
 
-        // --- LOGIKA 2: DEPENDENT DROPDOWN (KECAMATAN -> DESA) ---
+        // Dependent Dropdown
         $('#kecamatan_id').on('change', function() {
             var kecamatanID = $(this).val();
             var desaSelect = $('#desa_id');
-            
-            desaSelect.empty().append('<option value="">Loading...</option>'); // Kosongkan & beri loading
+            desaSelect.empty().append('<option value="">Loading...</option>'); 
 
             if (kecamatanID) {
-                // Panggil API
-                // Pastikan URL-nya benar. '/api/get-desa/...'
                 $.ajax({
-                    url: '/api/get-desa/' + kecamatanID,
+                    url: '/get-desa/' + kecamatanID,
                     type: "GET",
                     dataType: "json",
                     success:function(data) {
@@ -184,34 +218,27 @@
                             desaSelect.append('<option value="'+ value.id +'">'+ value.nama +'</option>');
                         });
                     },
-                    error: function() {
-                         desaSelect.empty().append('<option value="">Gagal mengambil data</option>');
-                    }
+                    error: function() { desaSelect.empty().append('<option value="">Gagal mengambil data</option>'); }
                 });
             } else {
                 desaSelect.empty().append('<option value="">-- Pilih Kecamatan Dulu --</option>');
             }
         });
 
-        // --- LOGIKA 3: HANDLER UNTUK OLD() VALUE SAAT VALIDASI ERROR ---
-        // Ini akan otomatis memilih ulang desa jika ada error validasi
+        // Handle Old Value
         var oldKecamatanId = "{{ old('kecamatan_id') }}";
         var oldDesaId = "{{ old('desa_id') }}";
-
         if (oldKecamatanId) {
-            $('#kecamatan_id').val(oldKecamatanId); // Set kecamatan
-            
+            $('#kecamatan_id').val(oldKecamatanId);
             var desaSelect = $('#desa_id');
             desaSelect.empty().append('<option value="">Loading...</option>');
-
             $.ajax({
-                url: '/api/get-desa/' + oldKecamatanId,
+                url: '/get-desa/' + oldKecamatanId,
                 type: "GET",
                 dataType: "json",
                 success:function(data) {
                     desaSelect.empty().append('<option value="">-- Pilih Desa --</option>');
                     $.each(data, function(key, value) {
-                        // Cek jika desa ini adalah desa yang tersimpan di old()
                         var isSelected = (value.id == oldDesaId) ? 'selected' : '';
                         desaSelect.append('<option value="'+ value.id +'" '+ isSelected +'>'+ value.nama +'</option>');
                     });

@@ -10,6 +10,7 @@ use App\Models\Desa;
 use App\Models\JenisPermohonan;
 use App\Models\WaTemplate;
 use App\Models\WaPlaceholder;
+use App\Models\User; // <--- PENTING: Agar tidak error Class not found
 use App\Services\WaNotificationService;
 use Illuminate\Http\Request;
 
@@ -17,16 +18,38 @@ class BerkasController extends Controller
 {
     /**
      * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        $semuaBerkas = Berkas::with('klien', 'kecamatan', 'desa', 'jenisPermohonan')
-                            ->latest()
-                            ->paginate(10);
+        // 1. Siapkan Query dengan Eager Loading (Relasi)
+        // Menggunakan 'dataKecamatan' & 'dataDesa' sesuai perbaikan Model sebelumnya
+        $query = Berkas::with(['klien', 'dataKecamatan', 'dataDesa', 'jenisPermohonan', 'waLogs']);
+
+        // 2. Logika Pencarian (Search)
+        if ($request->filled('search')) {
+            $search = $request->search;
+            
+            $query->where(function($q) use ($search) {
+                $q->where('nomer_berkas', 'LIKE', "%{$search}%")
+                  ->orWhere('nama_pemohon', 'LIKE', "%{$search}%")
+                  ->orWhere('nomer_hak', 'LIKE', "%{$search}%")
+                  ->orWhere('nomer_wa', 'LIKE', "%{$search}%")
+                  // Cari berdasarkan nama Kecamatan (via Relasi)
+                  ->orWhereHas('dataKecamatan', function($qKec) use ($search) {
+                      $qKec->where('nama', 'LIKE', "%{$search}%");
+                  })
+                  // Cari berdasarkan nama Desa (via Relasi)
+                  ->orWhereHas('dataDesa', function($qDesa) use ($search) {
+                      $qDesa->where('nama', 'LIKE', "%{$search}%");
+                  });
+            });
+        }
+
+        // 3. Eksekusi Query dengan Pagination
+        $semuaBerkas = $query->latest()
+                             ->paginate(10)
+                             ->withQueryString(); // Agar parameter search tidak hilang saat pindah halaman
         
-        // Menggunakan 'status_template' sesuai database Anda
         $templates = WaTemplate::where('status_template', 'aktif')->get(); 
         $placeholders = WaPlaceholder::all();
 
@@ -35,32 +58,27 @@ class BerkasController extends Controller
 
     /**
      * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
      */
     public function create()
     {
-        // PERBAIKAN 1: Pastikan baris ini aktif (tidak di-comment)
         $klienTersedia = Klien::orderBy('nama_klien', 'asc')->get();
-        
         $kecamatans = Kecamatan::orderBy('nama', 'asc')->get();
         $jenisPermohonans = JenisPermohonan::orderBy('nama', 'asc')->get();
+        
+        // Ambil data user untuk dropdown Korektor
+        $users = User::orderBy('name', 'asc')->get();
 
-        // PERBAIKAN 2: Tambahkan 'klienTersedia' ke compact()
-        return view('berkas.create', compact('klienTersedia', 'kecamatans', 'jenisPermohonans'));
+        return view('berkas.create', compact('klienTersedia', 'kecamatans', 'jenisPermohonans', 'users'));
     }
 
     /**
      * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
      */
     public function store(Request $request, WaNotificationService $waService)
     {
         $validated = $request->validate([
             'nomer_berkas' => 'nullable|string|max:255',
-            'klien_id' => 'nullable|exists:kliens,id',
+            'klien_id' => 'nullable|exists:klien,id', // Pastikan tabel 'klien' (bukan kliens)
             'nama_pemohon' => 'required|string|max:255',
             'nomer_wa' => 'nullable|string|max:20',
             'jenis_hak' => 'required|string|max:50',
@@ -73,6 +91,10 @@ class BerkasController extends Controller
             'keterangan' => 'nullable|string',
             'kode_biling' => 'nullable|string|max:255',
             'jumlah_bayar' => 'nullable|numeric',
+            
+            // Field Baru
+            'korektor' => 'nullable|string', 
+            'status' => 'required|string',   
         ]);
 
         $berkas = Berkas::create($validated);
@@ -87,19 +109,16 @@ class BerkasController extends Controller
 
     /**
      * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\Berkas  $berkas
-     * @return \Illuminate\Http\Response
      */
     public function edit(Berkas $berkas)
     {
         $klienTersedia = Klien::orderBy('nama_klien', 'asc')->get();
-        
         $templates = WaTemplate::where('status_template', 'aktif')->get(); 
-        
         $kecamatans = Kecamatan::orderBy('nama', 'asc')->get();
         $jenisPermohonans = JenisPermohonan::orderBy('nama', 'asc')->get();
-        // Ambil desa yang satu kecamatan dengan berkas
+        $users = User::orderBy('name', 'asc')->get(); // Data korektor
+        
+        // Ambil desa yang sesuai dengan kecamatan berkas saat ini
         $desas = Desa::where('kecamatan_id', $berkas->kecamatan_id)->orderBy('nama', 'asc')->get();
 
         return view('berkas.edit', compact(
@@ -108,22 +127,19 @@ class BerkasController extends Controller
             'templates', 
             'kecamatans', 
             'jenisPermohonans', 
-            'desas'
+            'desas',
+            'users'
         ));
     }
 
     /**
      * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Berkas  $berkas
-     * @return \Illuminate\Http\Response
      */
     public function update(Request $request, Berkas $berkas)
     {
         $validated = $request->validate([
             'nomer_berkas' => 'nullable|string|max:255',
-            'klien_id' => 'nullable|exists:kliens,id',
+            'klien_id' => 'nullable|exists:klien,id',
             'nama_pemohon' => 'required|string|max:255',
             'nomer_wa' => 'nullable|string|max:20',
             'jenis_hak' => 'required|string|max:50',
@@ -134,11 +150,12 @@ class BerkasController extends Controller
             'spa' => 'nullable|string',
             'alih_media' => 'nullable|string',
             'keterangan' => 'nullable|string',
-            'status' => 'required|string|max:50',
-            'posisi' => 'required|string|max:255',
             'kode_biling' => 'nullable|string|max:255',
             'jumlah_bayar' => 'nullable|numeric',
-            'tanggal_selesai' => 'nullable|date',
+            
+            // Field Update (Posisi & Tanggal Selesai DIHAPUS sesuai permintaan)
+            'status' => 'required|string', 
+            'korektor' => 'nullable|string',
         ]);
 
         $berkas->update($validated);
@@ -148,9 +165,6 @@ class BerkasController extends Controller
 
     /**
      * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\Berkas  $berkas
-     * @return \Illuminate\Http\Response
      */
     public function destroy(Berkas $berkas)
     {
@@ -159,13 +173,11 @@ class BerkasController extends Controller
     }
 
     /**
-     * FUNGSI API BARU UNTUK MENGAMBIL DESA
-     * * @param  \Illuminate\Http\Request  $request
-     * @param  int  $kecamatan_id
-     * @return \Illuminate\Http\JsonResponse
+     * FUNGSI API UNTUK MENGAMBIL DESA BERDASARKAN KECAMATAN
      */
     public function getDesaApi(Request $request, $kecamatan_id)
     {
+        // Mengambil data desa, diurutkan berdasarkan nama
         $desas = Desa::where('kecamatan_id', $kecamatan_id)->orderBy('nama', 'asc')->get();
         return response()->json($desas);
     }

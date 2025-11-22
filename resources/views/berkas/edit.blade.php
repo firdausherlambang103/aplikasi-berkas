@@ -23,7 +23,6 @@
             @csrf
             @method('PUT')
             <div class="row">
-                <!-- Kolom Kiri -->
                 <div class="col-md-6">
                     <div class="form-group">
                         <label>Nomer Berkas (Internal)</label>
@@ -79,25 +78,30 @@
                          @error('nomer_hak') <span class="invalid-feedback">{{ $message }}</span> @enderror
                     </div>
 
-                    {{-- DROPDOWN BARU --}}
+                    {{-- DROPDOWN KECAMATAN --}}
                     <div class="form-group">
                         <label>Kecamatan</label>
                         <select name="kecamatan_id" id="kecamatan_id" class="form-control @error('kecamatan_id') is-invalid @enderror" required>
                             <option value="">-- Pilih Kecamatan --</option>
                             @foreach($kecamatans as $kec)
-                                <option value="{{ $kec->id }}" {{ old('kecamatan_id', $berkas->kecamatan_id) == $kec->id ? 'selected' : '' }}>{{ $kec->nama }}</option>
+                                <option value="{{ $kec->id }}" {{ old('kecamatan_id', $berkas->kecamatan_id) == $kec->id ? 'selected' : '' }}>
+                                    {{ $kec->nama ?? $kec->nama_kecamatan }}
+                                </option>
                             @endforeach
                         </select>
                         @error('kecamatan_id') <span class="invalid-feedback">{{ $message }}</span> @enderror
                     </div>
 
+                    {{-- DROPDOWN DESA --}}
                     <div class="form-group">
                         <label>Desa</label>
                         <select name="desa_id" id="desa_id" class="form-control @error('desa_id') is-invalid @enderror" required>
                             <option value="">-- Pilih Kecamatan Dulu --</option>
                             {{-- Pre-load desa berdasarkan data berkas --}}
                             @foreach($desas as $desa)
-                                <option value="{{ $desa->id }}" {{ old('desa_id', $berkas->desa_id) == $desa->id ? 'selected' : '' }}>{{ $desa->nama }}</option>
+                                <option value="{{ $desa->id }}" {{ old('desa_id', $berkas->desa_id) == $desa->id ? 'selected' : '' }}>
+                                    {{ $desa->nama ?? $desa->nama_desa }}
+                                </option>
                             @endforeach
                         </select>
                         @error('desa_id') <span class="invalid-feedback">{{ $message }}</span> @enderror
@@ -115,23 +119,24 @@
                     </div>
                 </div>
 
-                <!-- Kolom Kanan -->
                 <div class="col-md-6">
-                    {{-- Tambahan field dari file edit asli Anda --}}
+                    {{-- PERBAIKAN: Status diubah jadi Dropdown --}}
                      <div class="form-group">
                         <label>Status</label>
-                        <input type="text" name="status" class="form-control @error('status') is-invalid @enderror" value="{{ old('status', $berkas->status) }}" required>
+                        <select name="status" class="form-control @error('status') is-invalid @enderror" required>
+                            <option value="">-- Pilih Status --</option>
+                            <option value="Baru" {{ old('status', $berkas->status) == 'Baru' ? 'selected' : '' }}>Baru</option>
+                            <option value="Proses" {{ old('status', $berkas->status) == 'Proses' ? 'selected' : '' }}>Proses</option>
+                            <option value="Selesai" {{ old('status', $berkas->status) == 'Selesai' ? 'selected' : '' }}>Selesai</option>
+                            <option value="Kendala" {{ old('status', $berkas->status) == 'Kendala' ? 'selected' : '' }}>Kendala</option>
+                            <option value="Dibatalkan" {{ old('status', $berkas->status) == 'Dibatalkan' ? 'selected' : '' }}>Dibatalkan</option>
+                        </select>
                         @error('status') <span class="invalid-feedback">{{ $message }}</span> @enderror
                     </div>
-                    <div class="form-group">
-                        <label>Posisi Berkas</label>
-                        <input type="text" name="posisi" class="form-control @error('posisi') is-invalid @enderror" value="{{ old('posisi', $berkas->posisi) }}" required>
-                         @error('posisi') <span class="invalid-feedback">{{ $message }}</span> @enderror
-                    </div>
-                    <div class="form-group">
-                        <label>Tanggal Selesai (Opsional)</label>
-                        <input type="date" name="tanggal_selesai" class="form-control" value="{{ old('tanggal_selesai', $berkas->tanggal_selesai ? \Carbon\Carbon::parse($berkas->tanggal_selesai)->format('Y-m-d') : '') }}">
-                    </div>
+
+                    {{-- PERBAIKAN: Posisi Berkas DIHAPUS --}}
+                    {{-- PERBAIKAN: Tanggal Selesai DIHAPUS --}}
+
                     <hr>
                     
                     <div class="form-group">
@@ -169,27 +174,42 @@
 </div>
 @stop
 
+{{-- CSS FIX UNTUK ADMINLTE DARK MODE --}}
+@section('css')
+<style>
+    /* Memaksa warna teks opsi menjadi hitam */
+    select.form-control option {
+        color: #000000 !important;
+        background-color: #ffffff !important;
+    }
+    /* Khusus untuk tema AdminLTE */
+    .dark-mode select.form-control option {
+        color: #000000 !important;
+        background-color: #ffffff !important;
+    }
+</style>
+@stop
+
 @section('js')
 <script>
     $(document).ready(function() {
-        // --- LOGIKA LAMA (AUTO-FILL WA) ---
+        // Auto-fill WA
         $('#kode_klien_select').on('change', function() {
             var selectedOption = $(this).find('option:selected');
             var nomerWa = selectedOption.data('nomer-wa') || '';
             $('#nomer_wa').val(nomerWa);
         });
-        // Tidak perlu trigger di 'edit' karena data sudah dimuat
 
-        // --- LOGIKA BARU (DEPENDENT DROPDOWN) ---
+        // Dependent Dropdown
         $('#kecamatan_id').on('change', function() {
             var kecamatanID = $(this).val();
             var desaSelect = $('#desa_id');
-            
             desaSelect.empty().append('<option value="">Loading...</option>'); 
 
             if (kecamatanID) {
+                // Menggunakan URL /get-desa/ (tanpa /api/) sesuai dengan routes yang diperbaiki
                 $.ajax({
-                    url: '/api/get-desa/' + kecamatanID,
+                    url: '/get-desa/' + kecamatanID, 
                     type: "GET",
                     dataType: "json",
                     success:function(data) {
@@ -206,10 +226,6 @@
                 desaSelect.empty().append('<option value="">-- Pilih Kecamatan Dulu --</option>');
             }
         });
-        
-        // Di halaman 'edit', kita tidak perlu auto-trigger AJAX
-        // karena data desa yang benar sudah di-load oleh controller.
-        // AJAX baru akan berjalan jika user MENGGANTI kecamatan.
     });
 </script>
 @stop

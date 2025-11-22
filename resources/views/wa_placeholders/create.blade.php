@@ -42,9 +42,9 @@
                 <label for="data_source">Data Source (Sumber Data)</label>
                 <input type="text" name="data_source" id="data_source" class="form-control" 
                        placeholder="Contoh: klien.nama_klien atau berkas.spa" value="{{ old('data_source') }}" required>
-                <small class="form-text text-muted">Format: <strong>relasi.kolom</strong>. <br>
-                    Nama relasi yang tersedia: <strong>berkas</strong> atau <strong>klien</strong>. <br>
-                    Contoh: <code>berkas.nomer_hak</code>, <code>klien.nama_klien</code>, <code>berkas.spa</code>, <code>berkas.keterangan</code>.
+                <small class="form-text text-muted">Format: <strong>relasi.kolom</strong> atau <strong>relasi.sub_relasi.kolom</strong>. <br>
+                    Contoh Dasar: <code>berkas.nomer_hak</code>, <code>klien.nama_klien</code>.<br>
+                    Contoh Wilayah: <code>berkas.data_kecamatan.nama</code>, <code>berkas.data_desa.nama</code>.
                 </small>
             </div>
             
