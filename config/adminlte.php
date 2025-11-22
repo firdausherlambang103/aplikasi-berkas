@@ -6,7 +6,10 @@ return [
     |--------------------------------------------------------------------------
     | Title
     |--------------------------------------------------------------------------
+    |
+    | Here you can change the default title of your admin panel.
     */
+
     'title' => 'Aplikasi Berkas',
     'title_prefix' => '',
     'title_postfix' => '',
@@ -16,6 +19,7 @@ return [
     | Favicon
     |--------------------------------------------------------------------------
     */
+
     'use_ico_only' => false,
     'use_full_favicon' => false,
 
@@ -24,6 +28,7 @@ return [
     | Google Fonts
     |--------------------------------------------------------------------------
     */
+
     'google_fonts' => [
         'allowed' => true,
     ],
@@ -33,6 +38,7 @@ return [
     | Logo
     |--------------------------------------------------------------------------
     */
+
     'logo' => '<b>App</b>BERKAS',
     'logo_img' => 'vendor/adminlte/dist/img/AdminLTELogo.png',
     'logo_img_class' => 'brand-image img-circle elevation-3',
@@ -45,6 +51,7 @@ return [
     | Authentication Logo
     |--------------------------------------------------------------------------
     */
+
     'auth_logo' => [
         'enabled' => false,
         'img' => [
@@ -61,6 +68,7 @@ return [
     | Preloader Animation
     |--------------------------------------------------------------------------
     */
+
     'preloader' => [
         'enabled' => true,
         'img' => [
@@ -77,6 +85,7 @@ return [
     | User Menu
     |--------------------------------------------------------------------------
     */
+
     'usermenu_enabled' => true,
     'usermenu_header' => false,
     'usermenu_header_class' => 'bg-primary',
@@ -89,18 +98,20 @@ return [
     | Layout
     |--------------------------------------------------------------------------
     */
+
     'layout_topnav' => null,
     'layout_boxed' => null,
     'layout_fixed_sidebar' => true,
     'layout_fixed_navbar' => true,
     'layout_fixed_footer' => null,
-    'layout_dark_mode' => null, // Ubah ke true jika ingin default dark mode
+    'layout_dark_mode' => null,
 
     /*
     |--------------------------------------------------------------------------
     | Authentication Views Classes
     |--------------------------------------------------------------------------
     */
+
     'classes_auth_card' => 'card-outline card-primary',
     'classes_auth_header' => '',
     'classes_auth_body' => '',
@@ -113,6 +124,7 @@ return [
     | Admin Panel Classes
     |--------------------------------------------------------------------------
     */
+
     'classes_body' => '',
     'classes_brand' => '',
     'classes_brand_text' => '',
@@ -130,6 +142,7 @@ return [
     | Sidebar
     |--------------------------------------------------------------------------
     */
+
     'sidebar_mini' => 'lg',
     'sidebar_collapse' => false,
     'sidebar_collapse_auto_size' => false,
@@ -145,6 +158,7 @@ return [
     | Control Sidebar (Right Sidebar)
     |--------------------------------------------------------------------------
     */
+
     'right_sidebar' => false,
     'right_sidebar_icon' => 'fas fa-cogs',
     'right_sidebar_theme' => 'dark',
@@ -158,12 +172,11 @@ return [
     | URLs
     |--------------------------------------------------------------------------
     */
+
     'use_route_url' => false,
     'dashboard_url' => 'home',
-    
-    // PENTING: Setting logout method ke POST agar tidak error MethodNotAllowed
     'logout_url' => 'logout',
-    'logout_method' => 'POST', 
+    'logout_method' => 'POST', // PENTING: Agar logout bekerja tanpa error MethodNotAllowed
     'login_url' => 'login',
     'register_url' => 'register',
     'password_reset_url' => 'password/reset',
@@ -175,6 +188,7 @@ return [
     | Laravel Mix
     |--------------------------------------------------------------------------
     */
+
     'enabled_laravel_mix' => false,
     'laravel_mix_css_path' => 'css/app.css',
     'laravel_mix_js_path' => 'js/app.js',
@@ -184,6 +198,7 @@ return [
     | Menu Items
     |--------------------------------------------------------------------------
     */
+
     'menu' => [
         // Navbar items:
         [
@@ -191,7 +206,7 @@ return [
             'topnav_right' => true,
         ],
 
-        // --- SIDEBAR MENU BERSIH ---
+        // --- SIDEBAR MENU UTAMA ---
         ['header' => 'MENU UTAMA'],
         
         [
@@ -211,6 +226,7 @@ return [
             'icon' => 'fas fa-fw fa-users',
         ],
 
+        // --- NOTIFIKASI WHATSAPP ---
         ['header' => 'NOTIFIKASI WHATSAPP'],
         
         [
@@ -224,6 +240,7 @@ return [
             'icon' => 'fas fa-fw fa-code',
         ],
 
+        // --- DATA REFERENSI ---
         ['header' => 'DATA REFERENSI'],
         
         [
@@ -247,22 +264,21 @@ return [
                 ],
             ],
         ],
+
+        // --- MENU ADMINISTRATOR (Baru Ditambahkan) ---
+        ['header' => 'ADMINISTRATOR'],
         
-        // Tidak perlu menu Logout manual di sini jika 'usermenu_enabled' => true
-        // karena sudah ada di pojok kanan atas (User Menu).
-        // Tapi jika ingin tetap ada di sidebar:
-        /*
-        ['header' => 'AKUN'],
         [
-            'text' => 'Logout',
-            'url'  => '#',
-            'icon' => 'fas fa-fw fa-sign-out-alt',
-            'icon_color' => 'red',
-            'attributes' => [
-                'onclick' => "event.preventDefault(); document.getElementById('logout-form').submit();",
-            ],
+            'text' => 'Manajemen User',
+            'url'  => 'users',
+            'icon' => 'fas fa-fw fa-user-plus',
         ],
-        */
+        [
+            'text' => 'Riwayat / Log',
+            'url'  => 'riwayat',
+            'icon' => 'fas fa-fw fa-history',
+            'label_color' => 'warning',
+        ],
     ],
 
     /*
@@ -270,6 +286,7 @@ return [
     | Menu Filters
     |--------------------------------------------------------------------------
     */
+
     'filters' => [
         JeroenNoten\LaravelAdminLte\Menu\Filters\GateFilter::class,
         JeroenNoten\LaravelAdminLte\Menu\Filters\HrefFilter::class,
@@ -285,6 +302,7 @@ return [
     | Plugins Initialization
     |--------------------------------------------------------------------------
     */
+
     'plugins' => [
         'Datatables' => [
             'active' => true,
@@ -363,6 +381,7 @@ return [
     | IFrame
     |--------------------------------------------------------------------------
     */
+
     'iframe' => [
         'default_tab' => [
             'url' => null,
@@ -388,5 +407,6 @@ return [
     | Livewire
     |--------------------------------------------------------------------------
     */
+
     'livewire' => false,
 ];
