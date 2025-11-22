@@ -3,100 +3,122 @@
 @section('title', 'Dashboard')
 
 @section('content_header')
-    <h1>Dashboard</h1>
+    <h1>Dashboard Statistik</h1>
 @stop
 
 @section('content')
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-lg-3 col-6">
-                <div class="small-box bg-info">
-                    <div class="inner">
-                        <h3>{{ $totalBerkas }}</h3>
-                        <p>Total Berkas Terdaftar</p>
-                    </div>
-                    <div class="icon">
-                        <i class="fas fa-file-alt"></i>
-                    </div>
-                    <a href="{{ route('berkas.index') }}" class="small-box-footer">
-                        Lihat Detail <i class="fas fa-arrow-circle-right"></i>
-                    </a>
-                </div>
-            </div>
-            
-            <div class="col-lg-3 col-6">
-                <div class="small-box bg-success">
-                    <div class="inner">
-                        <h3>{{ $totalKlien }}</h3>
-                        <p>Total Klien (Kode)</p>
-                    </div>
-                    <div class="icon">
-                        <i class="fas fa-users"></i>
-                    </div>
-                    <a href="{{ route('klien.index') }}" class="small-box-footer">
-                        Lihat Detail <i class="fas fa-arrow-circle-right"></i>
-                    </a>
-                </div>
-            </div>
-            
-            </div>
-        <div class="row">
-            <div class="col-md-12">
-                <div class="card card-primary">
-                    <div class="card-header">
-                        <h3 class="card-title">Grafik Berkas Masuk (Tahun {{ date('Y') }})</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="chart">
-                            <canvas id="berkasChart" style="min-height: 250px; height: 350px; max-height: 350px; max-width: 100%;"></canvas>
-                        </div>
-                    </div>
-                    </div>
-                </div>
-        </div>
+    {{-- ================================================= --}}
+    {{-- BAGIAN 1: TOTAL BERKAS TAHUNAN (SEMUA BULAN)      --}}
+    {{-- ================================================= --}}
+    <h5 class="mb-2">Total Berkas Tahun {{ $year }} (Keseluruhan)</h5>
+    <div class="row">
+        @php
+            // Pilihan warna background acak untuk info-box
+            $bgColors = ['bg-info', 'bg-success', 'bg-warning', 'bg-danger', 'bg-primary', 'bg-secondary', 'bg-indigo', 'bg-navy'];
+        @endphp
 
+        @foreach($totalPerKlien as $index => $klien)
+            <div class="col-12 col-sm-6 col-md-3">
+                <div class="info-box mb-3">
+                    <span class="info-box-icon {{ $bgColors[$index % count($bgColors)] }} elevation-1">
+                        <i class="fas fa-folder-open"></i>
+                    </span>
+
+                    <div class="info-box-content">
+                        <span class="info-box-text">{{ $klien->kode_klien }}</span>
+                        <span class="info-box-text small text-muted">{{ $klien->nama_klien }}</span>
+                        <span class="info-box-number">
+                            {{ $klien->berkas_count }} <small>Berkas</small>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        @endforeach
     </div>
-@stop
 
-@section('js')
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {{-- ================================================= --}}
+    {{-- BAGIAN 2: STATISTIK DETAIL PER BULAN              --}}
+    {{-- ================================================= --}}
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card card-outline card-primary">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-calendar-alt mr-1"></i>
+                        Statistik Bulanan: <b>{{ $bulanList[$selectedMonth] }} {{ $year }}</b>
+                    </h3>
 
-    <script>
-        $(function () {
-            // --- Logika untuk Chart.js ---
-
-            // Ambil data dari controller yang sudah di-pass ke Blade
-            var chartLabels = @json($bulanLabels);
-            var chartData = @json($chartData);
-            var tahunIni = new Date().getFullYear();
-
-            var ctx = document.getElementById('berkasChart').getContext('2d');
-            var myChart = new Chart(ctx, {
-                type: 'bar', // Tipe grafik: 'bar', 'line', 'pie', dll.
-                data: {
-                    labels: chartLabels,
-                    datasets: [{
-                        label: 'Jumlah Berkas Masuk ' + tahunIni,
-                        data: chartData,
-                        backgroundColor: 'rgba(0, 123, 255, 0.7)', // Biru
-                        borderColor: 'rgba(0, 123, 255, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: { // Opsi untuk sumbu Y (Chart.js v3+)
-                            beginAtZero: true,
-                            ticks: {
-                                // Memastikan angka di sumbu Y adalah bilangan bulat
-                                precision: 0 
-                            }
-                        }
-                    }
-                }
-            });
-        });
-    </script>
+                    {{-- FORM FILTER BULAN (Dropdown) --}}
+                    <div class="card-tools">
+                        <form action="{{ route('home') }}" method="GET" id="form-filter-bulan">
+                            <div class="input-group input-group-sm" style="width: 200px;">
+                                <select name="bulan" class="form-control float-right" onchange="document.getElementById('form-filter-bulan').submit()">
+                                    @foreach($bulanList as $key => $namaBulan)
+                                        <option value="{{ $key }}" {{ $selectedMonth == $key ? 'selected' : '' }}>
+                                            {{ $namaBulan }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <div class="input-group-append">
+                                    <button type="submit" class="btn btn-default">
+                                        <i class="fas fa-filter"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="card-body p-0">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th style="width: 10px">#</th>
+                                <th>Kode Klien</th>
+                                <th>Nama Klien</th>
+                                <th class="text-center" style="width: 200px">Jumlah Berkas</th>
+                                <th style="width: 40px">%</th> {{-- Persentase sederhana --}}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @php $totalBulanIni = $statsBulanan->sum('jumlah_berkas'); @endphp
+                            
+                            @forelse($statsBulanan as $stat)
+                                <tr>
+                                    <td>{{ $loop->iteration }}</td>
+                                    <td><span class="badge badge-info">{{ $stat->kode_klien }}</span></td>
+                                    <td>{{ $stat->nama_klien }}</td>
+                                    <td class="text-center">
+                                        <h5 class="text-primary font-weight-bold mb-0">
+                                            {{ $stat->jumlah_berkas }}
+                                        </h5>
+                                    </td>
+                                    <td>
+                                        @php
+                                            $persen = $totalBulanIni > 0 ? ($stat->jumlah_berkas / $totalBulanIni) * 100 : 0;
+                                            $warnaBar = $persen > 50 ? 'bg-success' : ($persen > 20 ? 'bg-warning' : 'bg-danger');
+                                        @endphp
+                                        <div class="progress progress-xs">
+                                            <div class="progress-bar {{ $warnaBar }}" style="width: {{ $persen }}%"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="5" class="text-center">Belum ada data klien.</td>
+                                </tr>
+                            @endforelse
+                            
+                            {{-- Baris Total --}}
+                            <tr class="bg-light font-weight-bold">
+                                <td colspan="3" class="text-right">TOTAL KESELURUHAN BULAN INI:</td>
+                                <td class="text-center" style="font-size: 1.2em;">{{ $totalBulanIni }}</td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 @stop

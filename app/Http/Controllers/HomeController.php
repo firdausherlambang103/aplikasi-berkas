@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Berkas; // <-- Tambahkan ini
-use App\Models\Klien; // <-- Tambahkan ini
-use Illuminate\Support\Facades\DB; // <-- Tambahkan ini
+use App\Models\Berkas;
+use App\Models\Klien;
+use Illuminate\Support\Facades\DB;
 
 class HomeController extends Controller
 {
@@ -24,44 +24,35 @@ class HomeController extends Controller
      *
      * @return \Illuminate\Contracts\Support\Renderable
      */
-    public function index()
+    public function index(Request $request)
     {
-        // --- 1. Statistik Kartu (Widgets) ---
-        $totalBerkas = Berkas::count();
-        $totalKlien = Klien::count();
+        // 1. Tentukan Tahun & Bulan (Default: Tahun & Bulan saat ini)
+        $year = date('Y');
+        $selectedMonth = $request->input('bulan', date('n')); // Ambil dari input atau default bulan ini
 
-        // --- 2. Data untuk Grafik ---
-        
-        // Label bulan untuk sumbu X
-        $bulanLabels = [
-            'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 
-            'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+        // 2. Data untuk Kotak Atas (Total Berkas per Klien Tahun Ini)
+        $totalPerKlien = Klien::withCount(['berkas' => function ($query) use ($year) {
+            $query->whereYear('created_at', $year);
+        }])->orderBy('nama_klien', 'asc')->get();
+
+        // 3. Data untuk Tabel Bawah (Detail per Klien pada Bulan yang Dipilih)
+        $statsBulanan = Klien::leftJoin('berkas', function($join) use ($year, $selectedMonth) {
+            $join->on('klien.id', '=', 'berkas.klien_id')
+                 ->whereYear('berkas.created_at', $year)
+                 ->whereMonth('berkas.created_at', $selectedMonth);
+        })
+        ->select('klien.id', 'klien.kode_klien', 'klien.nama_klien', DB::raw('COUNT(berkas.id) as jumlah_berkas'))
+        ->groupBy('klien.id', 'klien.kode_klien', 'klien.nama_klien')
+        ->orderBy('klien.nama_klien', 'asc')
+        ->get();
+
+        // Daftar nama bulan untuk dropdown
+        $bulanList = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
         ];
-        
-        // Ambil data berkas masuk per bulan untuk TAHUN INI
-        $berkasPerBulan = Berkas::select(
-                DB::raw('MONTH(created_at) as bulan'),
-                DB::raw('COUNT(*) as jumlah')
-            )
-            ->whereYear('created_at', date('Y')) // Hanya ambil data tahun ini
-            ->groupBy('bulan')
-            ->orderBy('bulan', 'asc')
-            ->pluck('jumlah', 'bulan') // Hasilnya: [1 => 10, 2 => 5, 4 => 12]
-            ->all();
 
-        // Siapkan array data 12 bulan, inisialisasi dengan 0
-        $chartData = [];
-        for ($i = 1; $i <= 12; $i++) {
-            // Jika ada data di $berkasPerBulan untuk bulan $i, gunakan. Jika tidak, gunakan 0.
-            $chartData[] = $berkasPerBulan[$i] ?? 0;
-        }
-
-        // Kirim semua data ke view
-        return view('home', compact(
-            'totalBerkas', 
-            'totalKlien', 
-            'bulanLabels', 
-            'chartData'
-        ));
+        return view('home', compact('totalPerKlien', 'statsBulanan', 'year', 'selectedMonth', 'bulanList'));
     }
 }
