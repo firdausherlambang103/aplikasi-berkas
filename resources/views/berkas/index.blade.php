@@ -279,7 +279,7 @@ $(document).ready(function() {
         button.html('<i class="fas fa-spinner fa-spin"></i> Mengirim...');
         button.prop('disabled', true);
 
-        fetch('http://localhost:3000/kirim-pesan', {
+        fetch('http://192.168.0.42:3000/kirim-pesan', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

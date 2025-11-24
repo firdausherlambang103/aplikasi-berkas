@@ -279,6 +279,14 @@ return [
             'icon' => 'fas fa-fw fa-history',
             'label_color' => 'warning',
         ],
+        
+        ['header' => 'WHATSAPP GATEWAY'],
+        [
+            'text'        => 'Scan QR / Status WA',
+            'route'       => 'wa.index', // Mengarah ke WhatsappWebController@index
+            'icon'        => 'fab fa-fw fa-whatsapp',
+            'icon_color'  => 'success',
+        ],
     ],
 
     /*

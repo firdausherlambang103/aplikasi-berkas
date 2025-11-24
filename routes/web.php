@@ -11,8 +11,10 @@ use App\Http\Controllers\DesaController;
 use App\Http\Controllers\JenisPermohonanController;
 use App\Http\Controllers\WaTemplateController;
 use App\Http\Controllers\WaPlaceholderController;
-
-// --- PERBAIKAN 1: REDIRECT ROOT KE LOGIN ---
+// PENTING: Tambahkan Controller Admin
+use App\Http\Controllers\AdminController; 
+use App\Http\Controllers\WhatsappWebController;
+// Redirect root ke login
 Route::get('/', function () {
     return redirect()->route('login');
 });
@@ -22,7 +24,8 @@ Auth::routes();
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
 Route::middleware(['auth'])->group(function () {
-    // Gunakan parameters untuk memperbaiki error pluralisasi (berkas vs berka)
+    
+    // --- MODUL UTAMA ---
     Route::resource('berkas', BerkasController::class)->parameters(['berkas' => 'berkas']);
     
     Route::get('/pengaturan-pesan', [PengaturanController::class, 'index'])->name('pengaturan.index');
@@ -31,13 +34,28 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('klien', KlienController::class); 
     Route::resource('wa-placeholders', WaPlaceholderController::class);
     
+    // --- DATA MASTER ---
     Route::resource('kecamatan', KecamatanController::class);
     Route::resource('desa', DesaController::class);
     Route::resource('jenis-permohonan', JenisPermohonanController::class);
     Route::resource('wa-templates', WaTemplateController::class);
     
+    // --- API & LOG ---
     Route::post('/log-wa-send', [WaLogController::class, 'store']);
-    
-    // Route API untuk AJAX
     Route::get('/get-desa/{id}', [DesaController::class, 'getDesaByKecamatan'])->name('get.desa');
+
+    // --- MENU ADMINISTRATOR (User & Riwayat) ---
+    // Pastikan rute ini ada agar tidak 404
+    Route::get('/users', [AdminController::class, 'indexUser'])->name('admin.users.index');
+    Route::get('/users/create', [AdminController::class, 'createUser'])->name('admin.users.create');
+    Route::post('/users', [AdminController::class, 'storeUser'])->name('admin.users.store');
+    Route::delete('/users/{id}', [AdminController::class, 'destroyUser'])->name('admin.users.destroy');
+
+    Route::get('/riwayat', [AdminController::class, 'indexRiwayat'])->name('admin.riwayat.index');
+});
+Route::group(['prefix' => 'whatsapp', 'as' => 'wa.'], function () {
+    Route::get('/scan', [WhatsappWebController::class, 'index'])->name('index');
+    Route::get('/status', [WhatsappWebController::class, 'getStatus'])->name('status');
+    Route::get('/qr', [WhatsappWebController::class, 'getQr'])->name('qr');
+    Route::post('/logout', [WhatsappWebController::class, 'logout'])->name('logout');
 });

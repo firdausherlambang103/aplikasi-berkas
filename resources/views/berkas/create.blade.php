@@ -130,9 +130,10 @@
                         <label>Status Berkas</label>
                         <select name="status" class="form-control @error('status') is-invalid @enderror">
                             <option value="Baru" {{ old('status') == 'Baru' ? 'selected' : '' }}>Baru</option>
-                            <option value="Proses" {{ old('status') == 'Proses' ? 'selected' : '' }}>Proses</option>
+                            <option value="Cetak SPS" {{ old('status') == 'Cetak SPS' ? 'selected' : '' }}>Cetak SPS</option>
                             <option value="Selesai" {{ old('status') == 'Selesai' ? 'selected' : '' }}>Selesai</option>
-                            <option value="Kendala" {{ old('status') == 'Kendala' ? 'selected' : '' }}>Kendala</option>
+                            <option value="Kembali" {{ old('status') == 'Kembali' ? 'selected' : '' }}>Kembali</option>
+                            <option value="Entri Data" {{ old('status') == 'Entri Data' ? 'selected' : '' }}>Entri Data</option>
                             <option value="Dibatalkan" {{ old('status') == 'Dibatalkan' ? 'selected' : '' }}>Dibatalkan</option>
                         </select>
                         @error('status') <span class="invalid-feedback">{{ $message }}</span> @enderror
