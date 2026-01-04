@@ -1,5 +1,7 @@
 @php
-    // Controller sudah me-pass $semuaBerkas, $templates, dan $placeholders
+    // Memastikan variabel tersedia
+    $placeholders = $placeholders ?? [];
+    $templates = $templates ?? collect([]);
 @endphp
 
 @extends('adminlte::page')
@@ -7,30 +9,31 @@
 @section('title', 'Daftar Berkas')
 
 @section('content_header')
-    <h1>Daftar Berkas</h1>
+    <div class="d-flex justify-content-between align-items-center">
+        <h1>Manajemen Berkas</h1>
+        <a href="{{ route('berkas.create') }}" class="btn btn-primary btn-sm shadow-sm">
+            <i class="fas fa-plus mr-1"></i> Tambah Berkas Baru
+        </a>
+    </div>
 @stop
 
 @section('content')
+    {{-- Alert Success --}}
     @if ($message = Session::get('success'))
-        <div class="alert alert-success alert-dismissible">
+        <div class="alert alert-success alert-dismissible fade show shadow-sm">
             <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-            {{ $message }}
+            <i class="icon fas fa-check"></i> {{ $message }}
         </div>
     @endif
 
-    <div class="card">
+    <div class="card card-outline card-primary shadow-sm">
+        {{-- HEADER & PENCARIAN --}}
         <div class="card-header">
-            <h3 class="card-title">
-                <a href="{{ route('berkas.create') }}" class="btn btn-primary btn-sm">
-                    <i class="fas fa-plus"></i> Tambah Berkas Baru
-                </a>
-            </h3>
-
-            {{-- --- FITUR PENCARIAN --- --}}
+            <h3 class="card-title mt-1">Daftar Semua Berkas</h3>
             <div class="card-tools">
                 <form action="{{ route('berkas.index') }}" method="GET">
-                    <div class="input-group input-group-sm" style="width: 250px;">
-                        <input type="text" name="search" class="form-control float-right" placeholder="Cari Berkas/Pemohon..." value="{{ request('search') }}">
+                    <div class="input-group input-group-sm" style="width: 280px;">
+                        <input type="text" name="search" class="form-control float-right" placeholder="Cari Berkas/Pemohon/Klien..." value="{{ request('search') }}">
                         <div class="input-group-append">
                             <button type="submit" class="btn btn-default">
                                 <i class="fas fa-search"></i>
@@ -39,74 +42,140 @@
                     </div>
                 </form>
             </div>
-            {{-- --- END FITUR PENCARIAN --- --}}
         </div>
 
+        {{-- TABEL DATA --}}
         <div class="card-body table-responsive p-0">
-            {{-- Tambahkan table-responsive agar tabel aman di layar kecil --}}
-            <table class="table table-bordered table-striped table-hover text-nowrap" id="berkas-table">
-                <thead>
+            <table class="table table-hover table-striped text-nowrap valign-middle" id="berkas-table">
+                <thead class="bg-light">
                     <tr>
-                        <th style="width: 10px">ID</th>
-                        <th>Nomer Berkas</th>
-                        <th>Nama Pemohon</th>
-                        <th>Nomer Hak</th>
-                        <th>Kec/Desa</th>
-                        <th>Status</th> {{-- Kolom Status Baru --}}
-                        <th style="width: 150px">Info WA</th> 
-                        <th style="width: 150px">Aksi</th>
+                        <th width="5%" class="text-center">ID</th>
+                        <th width="22%">Info Berkas & Keterangan</th> 
+                        <th width="20%">Pemohon & Kode Klien</th>    
+                        <th width="15%">Lokasi (Kec/Desa)</th>
+                        <th width="10%">Korektor</th>                
+                        <th width="8%" class="text-center">Status</th>
+                        <th width="10%" class="text-center">Info WA</th>
+                        <th width="10%" class="text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($semuaBerkas as $berkas)
                     <tr>
-                        <td>{{ $berkas->id }}</td>
-                        <td>{{ $berkas->nomer_berkas }}</td>
-                        <td>
-                            {{ $berkas->nama_pemohon }}
-                            @if($berkas->nomer_wa)
-                                <br><small class="text-muted"><i class="fab fa-whatsapp"></i> {{ $berkas->nomer_wa }}</small>
-                            @endif
-                        </td>
-                        <td>{{ $berkas->jenis_hak }} / {{ $berkas->nomer_hak }}</td>
+                        <td class="text-center align-middle">{{ $berkas->id }}</td>
                         
-                        <td>
-                            {{-- Tampilkan Nama Kecamatan/Desa dengan aman --}}
-                            {{ $berkas->dataKecamatan->nama ?? '-' }} 
-                            / 
-                            {{ $berkas->dataDesa->nama ?? '-' }}
+                        {{-- KOLOM 1: INFO BERKAS --}}
+                        <td class="align-middle">
+                            <div class="d-flex flex-column">
+                                <span class="font-weight-bold text-dark" style="font-size: 1.05rem;">
+                                    {{ $berkas->nomer_berkas ?? '-' }}
+                                </span>
+                                <small class="text-muted mb-1">
+                                    {{ $berkas->jenis_hak ?? 'Hak' }} / {{ $berkas->nomer_hak ?? '-' }}
+                                </small>
+                                
+                                {{-- Keterangan Minimalis --}}
+                                @if(!empty($berkas->keterangan))
+                                    <div class="mt-1 p-1 bg-light rounded border border-light text-wrap" style="font-size: 0.8rem; line-height: 1.2; max-width: 350px;">
+                                        <i class="fas fa-info-circle text-info mr-1"></i> 
+                                        <span class="text-secondary font-italic">{{ Str::limit($berkas->keterangan, 100) }}</span>
+                                    </div>
+                                @endif
+                            </div>
                         </td>
 
-                        <td>
-                            {{-- Badge Status Warna-warni --}}
+                        {{-- KOLOM 2: PEMOHON & KLIEN (PERBAIKAN LOGIKA DI SINI) --}}
+                        <td class="align-middle">
+                            <div class="d-flex flex-column">
+                                <span class="font-weight-bold">{{ $berkas->nama_pemohon }}</span>
+                                
+                                {{-- LOGIKA BARU: Cek Relasi Klien ATAU Kolom Langsung --}}
+                                @php
+                                    $kodeKlien = null;
+                                    // Cek 1: Apakah ada relasi ke tabel klien?
+                                    if(isset($berkas->klien) && !empty($berkas->klien->kode_klien)) {
+                                        $kodeKlien = $berkas->klien->kode_klien;
+                                    } 
+                                    // Cek 2: Atau apakah ada kolom langsung kode_klien di tabel berkas?
+                                    elseif(!empty($berkas->kode_klien)) {
+                                        $kodeKlien = $berkas->kode_klien;
+                                    }
+                                @endphp
+
+                                @if($kodeKlien)
+                                    <span class="badge badge-info mt-1 mb-1 align-self-start font-weight-normal px-2">
+                                        <i class="fas fa-id-badge mr-1"></i> {{ $kodeKlien }}
+                                    </span>
+                                @endif
+
+                                @if($berkas->nomer_wa)
+                                    <small class="text-success">
+                                        <i class="fab fa-whatsapp mr-1"></i> {{ $berkas->nomer_wa }}
+                                    </small>
+                                @else
+                                    <small class="text-muted text-italic">(Tidak ada WA)</small>
+                                @endif
+                            </div>
+                        </td>
+
+                        {{-- KOLOM 3: LOKASI --}}
+                        <td class="align-middle">
+                            <span class="d-block font-weight-bold text-secondary" style="font-size: 0.9rem;">
+                                {{ $berkas->dataKecamatan->nama ?? '-' }}
+                            </span>
+                            <small class="text-muted">
+                                {{ $berkas->dataDesa->nama ?? '-' }}
+                            </small>
+                        </td>
+
+                        {{-- KOLOM 4: KOREKTOR --}}
+                        <td class="align-middle">
+                            @if(!empty($berkas->korektor))
+                                <div class="user-block text-sm d-flex align-items-center">
+                                    <span class="img-circle elevation-1 bg-secondary d-flex align-items-center justify-content-center mr-2" style="width: 25px; height: 25px; font-size: 10px;">
+                                        {{ strtoupper(substr($berkas->korektor, 0, 2)) }}
+                                    </span>
+                                    <span class="text-dark" style="font-size: 0.9rem;">
+                                        {{ $berkas->korektor }}
+                                    </span>
+                                </div>
+                            @else
+                                <span class="text-muted font-italic">-</span>
+                            @endif
+                        </td>
+
+                        {{-- KOLOM 5: STATUS --}}
+                        <td class="align-middle text-center">
                             @php
                                 $badgeClass = match($berkas->status) {
                                     'Selesai' => 'badge-success',
-                                    'Proses' => 'badge-info',
+                                    'Proses' => 'badge-primary',
                                     'Kendala' => 'badge-warning',
-                                    'Dibatalkan' => 'badge-danger',
+                                    'Dibatalkan', 'Ditolak' => 'badge-danger',
                                     default => 'badge-secondary'
                                 };
                             @endphp
-                            <span class="badge {{ $badgeClass }}">{{ $berkas->status }}</span>
+                            <span class="badge {{ $badgeClass }} px-2 py-1">{{ $berkas->status ?? 'Draft' }}</span>
                         </td>
                         
-                        <td>
+                        {{-- KOLOM 6: INFO WA --}}
+                        <td class="align-middle text-center">
                             @if($berkas->nomer_wa && $templates->count() > 0)
                                 <div class="btn-group">
-                                    <button type="button" class="btn btn-success btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                        Kirim Info
+                                    <button type="button" class="btn btn-outline-success btn-xs dropdown-toggle shadow-sm" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <i class="fab fa-whatsapp"></i> Kirim
                                     </button>
-                                    <div class="dropdown-menu">
+                                    <div class="dropdown-menu dropdown-menu-right">
                                         @foreach($templates as $template)
                                             @php
-                                                $logCount = $berkas->waLogs->where('wa_template_id', $template->id)->count();
+                                                $logCount = $berkas->waLogs ? $berkas->waLogs->where('wa_template_id', $template->id)->count() : 0;
+                                                
                                                 $nomerWa = $berkas->nomer_wa;
                                                 if(substr($nomerWa, 0, 1) == "0") { $nomerWa = "62" . substr($nomerWa, 1); }
-                                                $nomerWa = str_replace('+', '', $nomerWa); 
+                                                $nomerWa = str_replace(['+', '-', ' '], '', $nomerWa); 
                                             @endphp
                                             
-                                            <a class="dropdown-item btn-kirim-wa" href="#"
+                                            <a class="dropdown-item btn-kirim-wa d-flex justify-content-between align-items-center" href="#"
                                                 data-nomor="{{ $nomerWa }}"
                                                 data-template-id="{{ $template->id }}"
                                                 data-berkas-id="{{ $berkas->id }}"
@@ -114,36 +183,46 @@
                                                 data-berkas-json="{{ json_encode($berkas->toArray()) }}"
                                                 data-klien-json="{{ json_encode($berkas->klien ? $berkas->klien->toArray() : null) }}"
                                             >
-                                                {{ $template->nama_template }}
-                                                <span class="badge badge-primary badge-pill float-right">{{ $logCount }}</span>
+                                                <span>{{ $template->nama_template }}</span>
+                                                @if($logCount > 0)
+                                                    <span class="badge badge-light ml-2">{{ $logCount }}</span>
+                                                @endif
                                             </a>
                                         @endforeach
                                     </div>
                                 </div>
                             @else
-                                <small class="text-muted">
-                                    @if(!$berkas->nomer_wa) (No WA) @else (No Template) @endif
-                                </small>
+                                <span class="text-muted small">-</span>
                             @endif
                         </td>
 
-                        <td>
-                            <form action="{{ route('berkas.destroy', $berkas->id) }}" method="POST" style="display:inline-block;">
-                                <a href="{{ route('berkas.edit', $berkas->id) }}" class="btn btn-warning btn-sm" title="Edit"><i class="fa fa-edit"></i></a>
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Yakin ingin menghapus berkas ini?')" title="Hapus"><i class="fa fa-trash"></i></button>
-                            </form>
+                        {{-- KOLOM 7: AKSI --}}
+                        <td class="align-middle text-center">
+                            <div class="btn-group">
+                                <a href="{{ route('berkas.edit', $berkas->id) }}" class="btn btn-warning btn-xs" title="Edit">
+                                    <i class="fa fa-edit text-white"></i>
+                                </a>
+                                <form action="{{ route('berkas.destroy', $berkas->id) }}" method="POST" style="display:inline-block;" onsubmit="return confirm('Yakin ingin menghapus berkas ini?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-danger btn-xs" title="Hapus" style="border-top-left-radius: 0; border-bottom-left-radius: 0;">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="text-center">
-                            @if(request('search'))
-                                Data tidak ditemukan untuk pencarian "<strong>{{ request('search') }}</strong>"
-                            @else
-                                Belum ada data berkas.
-                            @endif
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            <i class="fas fa-folder-open fa-3x mb-3 text-gray-300"></i>
+                            <p class="mb-0">
+                                @if(request('search'))
+                                    Data tidak ditemukan untuk pencarian "<strong>{{ request('search') }}</strong>"
+                                @else
+                                    Belum ada data berkas.
+                                @endif
+                            </p>
                         </td>
                     </tr>
                     @endforelse
@@ -151,9 +230,14 @@
             </table>
         </div>
         
+        {{-- FOOTER PAGINATION --}}
         <div class="card-footer clearfix">
-            {{-- Pagination Link --}}
-            {{ $semuaBerkas->links() }}
+            <div class="float-left text-muted text-sm pt-2">
+                Menampilkan {{ $semuaBerkas->firstItem() }} s/d {{ $semuaBerkas->lastItem() }} dari {{ $semuaBerkas->total() }} data
+            </div>
+            <div class="float-right">
+                {{ $semuaBerkas->links('pagination::bootstrap-4') }}
+            </div>
         </div>
     </div>
 
@@ -162,9 +246,9 @@
     <div class="modal fade" id="kirimWaModal" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="modalLabel">Konfirmasi Pengiriman Pesan WA</h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <div class="modal-header bg-success text-white">
+            <h5 class="modal-title" id="modalLabel"><i class="fab fa-whatsapp"></i> Konfirmasi Kirim WA</h5>
+            <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
@@ -172,51 +256,73 @@
             <input type="hidden" id="modal-berkas-id">
             <input type="hidden" id="modal-template-id">
             <div class="form-group">
-                <label>Kirim Ke (Read-only):</label>
-                <input type="text" id="modal-nomor-wa" class="form-control" readonly>
+                <label class="font-weight-bold small text-uppercase">Tujuan:</label>
+                <input type="text" id="modal-nomor-wa" class="form-control bg-light" readonly style="font-family: monospace; font-size: 1.1rem;">
             </div>
             <div class="form-group">
-                <label>Isi Pesan (Konfirmasi):</label>
-                <textarea id="modal-isi-pesan" class="form-control" rows="10" readonly></textarea>
+                <label class="font-weight-bold small text-uppercase">Preview Pesan:</label>
+                <textarea id="modal-isi-pesan" class="form-control bg-light" rows="8" readonly style="font-size: 0.9rem;"></textarea>
+                <small class="text-muted">*Placeholder telah diganti dengan data asli.</small>
             </div>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-            <button type="button" class="btn btn-success" id="btn-kirim-final">Kirim Sekarang</button>
+            <button type="button" class="btn btn-success shadow" id="btn-kirim-final">
+                <i class="fas fa-paper-plane mr-1"></i> Kirim Sekarang
+            </button>
           </div>
         </div>
       </div>
     </div>
 @stop
 
+@section('css')
+    <style>
+        .table-vcenter td {
+            vertical-align: middle !important;
+        }
+        .btn-xs {
+            padding: 0.125rem 0.4rem;
+            font-size: 0.75rem;
+            line-height: 1.5;
+            border-radius: 0.2rem;
+        }
+    </style>
+@stop
+
 @section('js')
 <script>
 $(document).ready(function() {
     
+    // Ambil data placeholder dari Controller
     const allPlaceholders = @json($placeholders);
 
-    // --- Inisialisasi DataTables (HANYA FITUR SORTING, KARENA PAGING & SEARCH KITA PAKAI LARAVEL) ---
+    // --- DataTables Init (Sorting Only) ---
     try {
         $('#berkas-table').DataTable({
-            "paging": false,     // Matikan paging datatables (kita pakai Laravel punya)
+            "paging": false,     
             "lengthChange": false,
-            "searching": false,  // Matikan search datatables (kita pakai input search custom di atas)
+            "searching": false,  
             "ordering": true,
+            "order": [[ 0, "desc" ]],
             "info": false,
             "autoWidth": false,
             "responsive": true,
+            "language": {
+                "emptyTable": " " 
+            }
         });
     } catch (e) {
-        console.warn("Plugin DataTables gagal dimuat.");
+        console.warn("Plugin DataTables warning: " + e.message);
     }
 
-    // --- FUNGSI BANTUAN NESTED DATA ---
+    // --- Helper Nested Object ---
     function getNestedValue(obj, path) {
         if (!path) return '';
         return path.split('.').reduce((acc, part) => (acc && acc[part] !== undefined) ? acc[part] : '', obj);
     }
 
-    // --- Handler Tombol Buka Modal ---
+    // --- 1. Tombol Buka Modal ---
     $('body').on('click', '.btn-kirim-wa', function(e) {
         e.preventDefault();
         
@@ -225,6 +331,7 @@ $(document).ready(function() {
         const berkasId = button.data('berkas-id');
         const templateId = button.data('template-id');
         let templateText = button.data('template-text');
+        
         const dataBerkas = button.data('berkas-json');
         const dataKlien = button.data('klien-json');
 
@@ -248,7 +355,7 @@ $(document).ready(function() {
                 }
             }
 
-            if (typeof value === 'object') value = ''; 
+            if (value === null || typeof value === 'object') value = ''; 
             pesanFinal = pesanFinal.replace(new RegExp(key.replace(/\[/g, '\\[').replace(/\]/g, '\\]'), 'g'), value);
         });
         
@@ -260,10 +367,8 @@ $(document).ready(function() {
         $('#kirimWaModal').modal('show');
     });
 
-
-    // --- Handler Tombol "Kirim Sekarang" ---
+    // --- 2. Tombol Eksekusi Kirim ---
     $('body').on('click', '#btn-kirim-final', function() {
-        
         const button = $(this);
         const nomor = $('#modal-nomor-wa').val();
         const pesan = $('#modal-isi-pesan').val();
@@ -279,15 +384,10 @@ $(document).ready(function() {
         button.html('<i class="fas fa-spinner fa-spin"></i> Mengirim...');
         button.prop('disabled', true);
 
-        fetch('http://192.168.0.42:3000/kirim-pesan', {
+        fetch('{{ config('app.wa_api_url', 'http://192.168.0.42:3000') }}/kirim-pesan', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                nomor: nomor,
-                pesan: pesan,
-                berkas_id: berkas_id,
-                wa_template_id: wa_template_id
-            })
+            body: JSON.stringify({ nomor, pesan, berkas_id, wa_template_id })
         })
         .then(response => {
             if (!response.ok) throw new Error(`Server WA Error: ${response.status}`);
@@ -295,44 +395,30 @@ $(document).ready(function() {
         })
         .then(data => {
             if (data.success) {
-                
-                // LAPOR LOG KE LARAVEL
                 fetch('/log-wa-send', { 
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') 
                     },
-                    body: JSON.stringify({
-                        berkas_id: berkas_id,
-                        wa_template_id: wa_template_id
-                    })
+                    body: JSON.stringify({ berkas_id, wa_template_id })
                 })
                 .then(res => {
                     if(res.ok) {
-                        if (typeof toastr !== 'undefined') {
-                            toastr.success('Pesan terkirim & Log disimpan!'); 
-                        } else {
-                            alert('Pesan terkirim & Log disimpan!'); 
-                        }
+                        toastr_success('Pesan terkirim & Log tersimpan!');
                         $('#kirimWaModal').modal('hide');
-                        location.reload(); 
+                        setTimeout(() => location.reload(), 1000); 
                     } else {
-                        alert("Pesan terkirim, tapi log gagal disimpan.");
+                        alert("Pesan WA terkirim, tapi gagal menyimpan Log di database.");
                     }
                 });
-
             } else {
-                if (typeof toastr !== 'undefined') {
-                    toastr.error('Gagal mengirim: ' + data.message);
-                } else {
-                    alert('Gagal mengirim: ' + data.message); 
-                }
+                toastr_error('Gagal mengirim: ' + (data.message || 'Unknown error'));
             }
         })
         .catch(error => {
-            console.error('Error saat fetch:', error);
-            alert('Gagal menghubungi Server WA. Pastikan Node.js berjalan.'); 
+            console.error('Error:', error);
+            alert('Gagal menghubungi Server WA.'); 
         })
         .finally(() => {
             button.html(originalText);
@@ -340,6 +426,14 @@ $(document).ready(function() {
         });
     });
 
+    function toastr_success(msg) {
+        if (typeof toastr !== 'undefined') toastr.success(msg);
+        else alert(msg);
+    }
+    function toastr_error(msg) {
+        if (typeof toastr !== 'undefined') toastr.error(msg);
+        else alert(msg);
+    }
 });
 </script>
 @stop

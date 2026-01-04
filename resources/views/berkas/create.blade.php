@@ -69,6 +69,8 @@
                             <option value="SHW" {{ old('jenis_hak') == 'SHW' ? 'selected' : '' }}>SHW</option>
                             <option value="SHP" {{ old('jenis_hak') == 'SHP' ? 'selected' : '' }}>SHP</option>
                             <option value="Leter C" {{ old('jenis_hak') == 'Leter C' ? 'selected' : '' }}>Leter C</option>
+                            <option value="SHP" {{ old('jenis_hak') == 'SHP' ? 'selected' : '' }}>SHP</option>
+                            <option value="Leter C" {{ old('jenis_hak') == 'Leter C' ? 'selected' : '' }}>Leter C</option>
                         </select>
                          @error('jenis_hak') <span class="invalid-feedback">{{ $message }}</span> @enderror
                     </div>
